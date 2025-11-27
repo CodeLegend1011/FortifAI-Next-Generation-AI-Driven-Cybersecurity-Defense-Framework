@@ -1,0 +1,142 @@
+FortifAI/
+│
+├── README.md
+├── requirements.txt
+├── .env.example                  # PostgreSQL connection, API keys, etc.
+├── docker-compose.yml            # For server + TimescaleDB stack
+│
+├── server/                       # Central Admin Server
+│   ├── main.py                   # FastAPI entry point
+│   ├── app.py                    # Launches PyQt5 GUI + embeds dashboard
+│   ├── config/                   # Configurations
+│   │   ├── settings.py
+│   │   ├── constants.py
+│   │   └── logging_config.py
+│   │
+│   ├── database/                 # PostgreSQL/TimescaleDB setup
+│   │   ├── __init__.py
+│   │   ├── db_connection.py      # SQLAlchemy engine + session
+│   │   ├── models.py             # ORM models (Clients, Alerts, Metrics)
+│   │   └── queries.py            # CRUD operations
+│   │
+│   ├── server_core/              # Core backend logic
+│   │   ├── ingestion/            # Data ingestion & validation
+│   │   │   ├── __init__.py
+│   │   │   ├── validator.py
+│   │   │   └── feature_engineering.py
+│   │   │
+│   │   ├── ml_engine/            # ML anomaly detection
+│   │   │   ├── __init__.py
+│   │   │   ├── edge_model_manager.py
+│   │   │   ├── central_models.py
+│   │   │   ├── trainer.py
+│   │   │   └── evaluator.py
+│   │   │
+│   │   ├── federated/            # Federated learning integration (Flower)
+│   │   │   ├── __init__.py
+│   │   │   ├── fl_server.py
+│   │   │   ├── fl_client_stub.py
+│   │   │   └── fl_utils.py
+│   │   │
+│   │   ├── rl_engine/            # Reinforcement Learning
+│   │   │   ├── __init__.py
+│   │   │   ├── environment.py
+│   │   │   ├── policy.py
+│   │   │   ├── trainer.py
+│   │   │   └── simulator.py
+│   │   │
+│   │   ├── threat_intel/         # External threat intel and IoC lookups
+│   │   │   ├── __init__.py
+│   │   │   ├── ioc_feeds.py
+│   │   │   ├── reputation_check.py
+│   │   │   └── correlator.py
+│   │   │
+│   │   └── utils/                # Reusable helpers
+│   │       ├── logger.py
+│   │       ├── preprocess.py
+│   │       ├── metrics.py
+│   │       └── scheduler.py
+│   │
+│   ├── api/                      # FastAPI routes
+│   │   ├── __init__.py
+│   │   ├── routes_clients.py     # Client registration, health
+│   │   ├── routes_alerts.py      # Alerts, anomaly data
+│   │   ├── routes_models.py      # Federated model info
+│   │   └── routes_dashboard.py   # Dashboard data API
+│   │
+│   ├── gui/                      # Admin GUI (PyQt5)
+│   │   ├── __init__.py
+│   │   ├── main_window.py
+│   │   ├── dashboard_panel.py
+│   │   ├── analytics_panel.py
+│   │   ├── alerts_panel.py
+│   │   ├── rl_panel.py
+│   │   └── fl_panel.py
+│
+├── client/                       # Endpoint Agent (Edge Monitoring)
+│   ├── main.py                   # Entry point for agent
+│   ├── config/
+│   │   ├── settings.py
+│   │   └── constants.py
+│   │
+│   ├── core/
+│   │   ├── collectors/           # Data collection modules
+│   │   │   ├── __init__.py
+│   │   │   ├── network_collector.py
+│   │   │   ├── process_collector.py
+│   │   │   ├── filesystem_collector.py
+│   │   │   └── user_collector.py
+│   │   │
+│   │   ├── preprocessor/         # Local feature extraction & validation
+│   │   │   ├── __init__.py
+│   │   │   ├── feature_extractor.py
+│   │   │   ├── hasher.py
+│   │   │   └── normalizer.py
+│   │   │
+│   │   ├── edge_ml/              # Local inference models
+│   │   │   ├── __init__.py
+│   │   │   ├── isolation_forest.py
+│   │   │   ├── oneclass_svm.py
+│   │   │   ├── autoencoder.py
+│   │   │   └── model_manager.py
+│   │   │
+│   │   └── communicator/         # Server sync layer
+│   │       ├── __init__.py
+│   │       ├── client_sync.py
+│   │       ├── health_reporter.py
+│   │       └── update_manager.py
+│   │
+│   ├── platform/
+│   │   ├── windows/
+│   │   │   ├── registry_monitor.py
+│   │   │   ├── wmi_collector.py
+│   │   │   ├── event_log_parser.py
+│   │   │   └── service_manager.py
+│   │   └── linux/
+│   │       ├── audit_parser.py
+│   │       ├── syslog_reader.py
+│   │       ├── inotify_watcher.py
+│   │       └── systemd_monitor.py
+│   │
+│   ├── utils/
+│   │   ├── logger.py
+│   │   ├── scheduler.py
+│   │   ├── compression.py
+│   │   └── config_loader.py
+│
+├── datasets/                     # Sample datasets (KDD, CICIDS, etc.)
+│   ├── raw/
+│   └── processed/
+│
+├── models/                       # Saved models
+│   ├── edge/
+│   │   ├── isolation_forest.pkl
+│   │   ├── oneclass_svm.pkl
+│   │   └── autoencoder.pt
+│   ├── central/
+│   │   ├── ensemble_autoencoder.pt
+│   │   ├── lstm_model.pt
+│   │   └── xgboost_model.json
+│   └── rl/
+│       └── cybersec_rl_policy.zip
+

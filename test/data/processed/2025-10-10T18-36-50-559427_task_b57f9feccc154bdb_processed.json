@@ -1,0 +1,55 @@
+{
+  "total_results": 0,
+  "websites": [],
+  "onion_domains": [
+    "iykpqm7jiradoeezzkhj7c4b33g4hbgfwelht2evxxeicbpjy44c7ead.onion",
+    "y7yea4pmmqlotusmldd7gqh7w7fkevn7tai7uaycx3kyt33gd7x434ad.onion",
+    "y7yea4pmqqtznb33qiugvysyn2bob5v62e4pvoadoibrwkq3tsddjeyd.onion"
+  ],
+  "clearnet_domains": [],
+  "all_urls": [
+    "http://y7yea4pmmqlotusmldd7gqh7w7fkevn7tai7uaycx3kyt33gd7x434ad.onion",
+    "http://y7yea4pmqqtznb33qiugvysyn2bob5v62e4pvoadoibrwkq3tsddjeyd.onion",
+    "https://github.com/josh0xA",
+    "https://joshschiavone.com",
+    "https://ssd.iykpqm7jiradoeezzkhj7c4b33g4hbgfwelht2evxxeicbpjy44c7ead.onion/"
+  ],
+  "all_emails": [],
+  "all_ips": [],
+  "document_links": [],
+  "keywords": [
+    "\u001b[0m\u001b[32msecurity",
+    "animated",
+    "basics",
+    "encryption",
+    "get",
+    "guides",
+    "index",
+    "iphone",
+    "know",
+    "online",
+    "overview",
+    "privacy",
+    "protecting",
+    "scenarios\u001b[0m",
+    "settings",
+    "surveillance",
+    "tool",
+    "use"
+  ],
+  "statistics": {
+    "total_websites": 0,
+    "onion_domains": 3,
+    "clearnet_domains": 0,
+    "total_urls": 5,
+    "onion_urls": 3,
+    "clearnet_urls": 2,
+    "total_emails": 0,
+    "total_ips": 0,
+    "total_keywords": 18,
+    "document_links": 0,
+    "websites_with_metadata": 0,
+    "websites_with_keywords": 0,
+    "websites_with_sentiment": 0
+  }
+}

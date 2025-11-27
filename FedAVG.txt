@@ -1,0 +1,475 @@
+
+┌─────────────────────────────────────────────────────────────┐
+│              FEDERATED LEARNING WORKFLOW                     │
+└─────────────────────────────────────────────────────────────┘
+
+CLIENT 1                    SERVER                    CLIENT 2
+   │                          │                          │
+   │  1. Register with FL     │                          │
+   │─────────────────────────>│                          │
+   │  <- Global Model v0      │                          │
+   │   (thresholds: 2.0)      │                          │
+   │                          │<─────────────────────────│
+   │                          │  Register with FL        │
+   │                          │  Global Model v0 ->      │
+   │                          │                          │
+   │  2. Collect local data   │                          │
+   │     Learn local patterns │                          │
+   │     Adjust thresholds    │  2. Collect local data   │
+   │     based on anomalies   │     Learn patterns       │
+   │                          │     Adjust thresholds    │
+   │                          │                          │
+   │  3. Send model update    │                          │
+   │  (new thresholds: 2.3)   │                          │
+   │─────────────────────────>│                          │
+   │                          │<─────────────────────────│
+   │                          │  Send model update       │
+   │                          │  (new thresholds: 1.8)   │
+   │                          │                          │
+   │                          │  4. AGGREGATE:           │
+   │                          │     Average = (2.3+1.8)/2│
+   │                          │     New threshold = 2.05 │
+   │                          │     Model v1 created     │
+   │                          │                          │
+   │  <- Updated Model v1     │                          │
+   │     (threshold: 2.05)    │                          │
+   │─────────────────────────>│─────────────────────────>│
+   │                          │  Updated Model v1 ->     │
+   │                          │                          │
+   │  5. Apply new thresholds │                          │
+   │     Better detection!    │  5. Apply new thresholds │
+   │                          │                          │
+
+
+
+# Detailed FedAvg Implementation Explanation
+
+## Mathematical Foundation
+
+### Current Implementation Analysis
+
+Let me break down exactly how the FedAvg (Federated Averaging) algorithm is implemented in your FortifAI system:
+
+---
+
+## 1. **Model Parameters Structure**
+
+Each client maintains three threshold parameters:
+
+```python
+θ = {
+    'network_threshold': θ_n,
+    'process_threshold': θ_p, 
+    'file_threshold': θ_f
+}
+```
+
+Where:
+- `θ_n` ∈ ℝ: Network anomaly detection threshold
+- `θ_p` ∈ ℝ: Process anomaly detection threshold  
+- `θ_f` ∈ ℝ: Filesystem anomaly detection threshold
+
+**Initial values:** `θ_n = θ_p = θ_f = 2.0`
+
+---
+
+## 2. **Local Training (Client Side)**
+
+### Anomaly Detection Formula
+
+Each client uses **z-score** based anomaly detection:
+
+```
+z = |x - μ| / σ
+
+Where:
+- x: current observation (e.g., number of connections)
+- μ: mean of baseline (rolling window of last 100 observations)
+- σ: standard deviation of baseline
+```
+
+**Anomaly Classification:**
+```
+is_anomaly = {
+    True,  if z > θ
+    False, otherwise
+}
+```
+
+### Example Calculation:
+
+```python
+# Client 1 observes network connections over time
+baseline_connections = [45, 50, 48, 52, 47, ..., 51]  # 100 values
+
+# Current observation
+x = 95  # connections
+
+# Calculate statistics
+μ = mean(baseline_connections) = 49.2
+σ = std(baseline_connections) = 2.8
+
+# Calculate z-score
+z = |95 - 49.2| / 2.8 = 16.36
+
+# Check against threshold
+θ_n = 2.0
+is_anomaly = (16.36 > 2.0) = True  ✓ Anomaly detected!
+```
+
+### Local Model Update
+
+The client doesn't explicitly "train" - it simply maintains:
+1. **Baseline statistics** (μ, σ) for each category
+2. **Current thresholds** (θ_n, θ_p, θ_f)
+
+**Model parameters sent to server:**
+```python
+model_params = {
+    'weights': {
+        'network_threshold': 2.0,
+        'process_threshold': 2.0,
+        'file_threshold': 2.0
+    },
+    'baselines': {
+        'network': {'connections': [...], 'bytes': [...]},
+        'process': {'count': [...], 'cpu': [...]},
+        'file': {'events': [...]}
+    }
+}
+```
+
+---
+
+## 3. **Server-Side Aggregation (FedAvg)**
+
+### Mathematical Formulation
+
+Given K clients that have sent updates, the server aggregates:
+
+**Standard FedAvg Formula:**
+```
+θ_global = Σ(k=1 to K) [n_k/n * θ_k]
+
+Where:
+- θ_k: model parameters from client k
+- n_k: number of samples from client k
+- n = Σn_k: total samples across all clients
+```
+
+**Current Implementation (Simplified):**
+```python
+# Equal weight averaging (uniform FedAvg)
+θ_global = (1/K) * Σ(k=1 to K) θ_k
+
+Or equivalently:
+θ_global = mean(θ_1, θ_2, ..., θ_K)
+```
+
+### Actual Code Implementation
+
+```python
+def aggregate_models(self):
+    """Aggregate client models using FedAvg"""
+    # Filter recent updates (last 10 minutes)
+    recent_models = {client_id: data for client_id, data in self.client_models.items()
+                     if data['timestamp'] > (now - 10 minutes)}
+    
+    K = len(recent_models)  # Number of clients
+    
+    # For each parameter (network_threshold, process_threshold, file_threshold)
+    for key in ['network_threshold', 'process_threshold', 'file_threshold']:
+        values = []
+        
+        # Collect parameter from each client
+        for client_data in recent_models.values():
+            θ_k = client_data['parameters']['weights'][key]
+            values.append(θ_k)
+        
+        # Compute average
+        θ_global[key] = (1/K) * sum(values)
+    
+    # Update global model version
+    version += 1
+```
+
+---
+
+## 4. **Concrete Example with Numbers**
+
+### Scenario: 3 Clients Report Updates
+
+**Client 1 (Windows Desktop, Normal Traffic):**
+```python
+θ_1 = {
+    'network_threshold': 2.0,
+    'process_threshold': 2.5,
+    'file_threshold': 2.0
+}
+# Experienced few anomalies, kept defaults mostly
+```
+
+**Client 2 (Linux Server, High Traffic):**
+```python
+θ_2 = {
+    'network_threshold': 3.5,  # Raised due to high normal traffic
+    'process_threshold': 2.0,
+    'file_threshold': 1.8      # More sensitive to file changes
+}
+# Adjusted thresholds based on environment
+```
+
+**Client 3 (Development Workstation, Lots of Processes):**
+```python
+θ_3 = {
+    'network_threshold': 2.2,
+    'process_threshold': 4.0,  # Raised due to many dev tools
+    'file_threshold': 2.3
+}
+# High process threshold due to IDEs, compilers, etc.
+```
+
+### Aggregation Calculation
+
+**Network Threshold:**
+```
+θ_global_n = (1/3) * (2.0 + 3.5 + 2.2)
+θ_global_n = (1/3) * 7.7
+θ_global_n = 2.567 ≈ 2.57
+```
+
+**Process Threshold:**
+```
+θ_global_p = (1/3) * (2.5 + 2.0 + 4.0)
+θ_global_p = (1/3) * 8.5
+θ_global_p = 2.833 ≈ 2.83
+```
+
+**File Threshold:**
+```
+θ_global_f = (1/3) * (2.0 + 1.8 + 2.3)
+θ_global_f = (1/3) * 6.1
+θ_global_f = 2.033 ≈ 2.03
+```
+
+**Global Model v1:**
+```python
+global_model = {
+    'weights': {
+        'network_threshold': 2.57,
+        'process_threshold': 2.83,
+        'file_threshold': 2.03
+    },
+    'version': 1
+}
+```
+
+---
+
+## 5. **Model Distribution and Convergence**
+
+### Distribution Back to Clients
+
+After aggregation, all clients receive the **same** global model:
+
+```
+Server → Client 1: θ_global
+Server → Client 2: θ_global
+Server → Client 3: θ_global
+```
+
+### Client Update Logic
+
+```python
+def update_model_parameters(self, new_weights):
+    """Client receives and applies global model"""
+    self.model_weights = {
+        'network_threshold': new_weights['network_threshold'],  # 2.57
+        'process_threshold': new_weights['process_threshold'],  # 2.83
+        'file_threshold': new_weights['file_threshold']        # 2.03
+    }
+```
+
+### Convergence Over Time
+
+**Round 1:**
+```
+θ_1 = [2.0, 2.5, 2.0]
+θ_2 = [3.5, 2.0, 1.8]
+θ_3 = [2.2, 4.0, 2.3]
+→ θ_global = [2.57, 2.83, 2.03]
+```
+
+**Round 2 (after clients apply global model):**
+```
+θ_1 = [2.57, 2.83, 2.03] + local_adjustment_1
+θ_2 = [2.57, 2.83, 2.03] + local_adjustment_2
+θ_3 = [2.57, 2.83, 2.03] + local_adjustment_3
+→ θ_global = closer consensus
+```
+
+**Round 3, 4, 5... → Convergence**
+```
+lim(n→∞) θ_global^(n) = θ_optimal
+```
+
+The thresholds converge to values that work well across all client environments!
+
+---
+
+## 6. **Why This Works**
+
+### Mathematical Properties
+
+**1. Consensus Property:**
+```
+If all clients have similar environments:
+θ_1 ≈ θ_2 ≈ θ_3 ≈ θ_k
+→ θ_global ≈ θ_k  (no change needed)
+```
+
+**2. Balancing Property:**
+```
+If environments differ:
+Client A: θ_A = 1.5 (too sensitive, many false positives)
+Client B: θ_B = 3.5 (too relaxed, misses threats)
+→ θ_global = 2.5 (balanced middle ground)
+```
+
+**3. Outlier Dampening:**
+```
+1 outlier client: θ_outlier = 10.0
+99 normal clients: θ_normal ≈ 2.0
+→ θ_global = (10 + 99*2)/100 = 2.08 (outlier has minimal impact)
+```
+
+---
+
+## 7. **Current Implementation Limitations & Improvements**
+
+### Current Limitation: Equal Weight Averaging
+
+**Problem:**
+```python
+# All clients weighted equally, regardless of data size
+θ_global = mean([θ_1, θ_2, θ_3])
+```
+
+A client with 10 observations has the same influence as one with 10,000!
+
+### Improvement: Weighted FedAvg
+
+**Better implementation:**
+
+```python
+def aggregate_models_weighted(self):
+    """Weighted FedAvg based on sample counts"""
+    
+    total_samples = 0
+    weighted_sums = {
+        'network_threshold': 0.0,
+        'process_threshold': 0.0,
+        'file_threshold': 0.0
+    }
+    
+    for client_id, client_data in recent_models.items():
+        # Get number of samples from each client
+        n_k = len(client_data['parameters']['baselines']['network']['connections'])
+        total_samples += n_k
+        
+        # Weighted contribution
+        for key in weighted_sums.keys():
+            θ_k = client_data['parameters']['weights'][key]
+            weighted_sums[key] += n_k * θ_k
+    
+    # Compute weighted average
+    for key in weighted_sums.keys():
+        θ_global[key] = weighted_sums[key] / total_samples
+    
+    return θ_global
+```
+
+**Mathematical formula:**
+```
+θ_global = Σ(k=1 to K) [(n_k/n) * θ_k]
+
+Where:
+- n_k = number of samples from client k
+- n = Σn_k = total samples
+```
+
+**Example:**
+```
+Client 1: 1000 samples, θ_1 = 2.0
+Client 2: 100 samples,  θ_2 = 5.0
+Client 3: 10 samples,   θ_3 = 8.0
+
+Equal weight:
+θ_global = (2.0 + 5.0 + 8.0) / 3 = 5.0
+
+Weighted:
+n = 1000 + 100 + 10 = 1110
+θ_global = (1000/1110)*2.0 + (100/1110)*5.0 + (10/1110)*8.0
+θ_global = 1.80 + 0.45 + 0.07 = 2.32
+
+Much better! Client 1 (with most data) has strongest influence.
+```
+
+---
+
+## 8. **Privacy Guarantees**
+
+### What is Shared
+```
+Client → Server:
+{
+    'weights': {'network_threshold': 2.5, ...},  # ✓ Only thresholds
+    'baselines': {
+        'network': {'connections': [45, 50, 48, ...]},  # ✓ Statistics only
+    }
+}
+```
+
+### What is NOT Shared
+```
+❌ Raw network packets
+❌ Actual IP addresses
+❌ Process names
+❌ File contents
+❌ User credentials
+❌ Any personally identifiable information (PII)
+```
+
+### Differential Privacy (Optional Enhancement)
+
+Add noise to parameters before sending:
+
+```python
+def add_privacy_noise(θ, epsilon=0.1):
+    """Add Laplace noise for differential privacy"""
+    noise = np.random.laplace(0, 1/epsilon, size=θ.shape)
+    return θ + noise
+
+# Client sends
+θ_noisy = add_privacy_noise(θ_client, epsilon=0.1)
+```
+
+This provides **ε-differential privacy** guarantee!
+
+---
+
+## Summary Table
+
+| **Aspect** | **Formula/Method** | **Current Value** |
+|------------|-------------------|------------------|
+| Initial threshold | θ₀ | 2.0 |
+| Anomaly detection | z = \|x - μ\| / σ | z-score |
+| Anomaly threshold | z > θ | Variable |
+| Aggregation | θ_global = (1/K)Σθₖ | Mean averaging |
+| Update frequency | Every 5 minutes | 300 seconds |
+| Min clients for aggregation | K ≥ 2 | 2 clients |
+| Model expiry | 10 minutes | 600 seconds |
+
+---
+
+This is a **simplified but functional** implementation of FedAvg focused on anomaly detection thresholds. It successfully demonstrates federated learning principles while being lightweight enough for real-time cybersecurity monitoring!

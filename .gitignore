@@ -1,0 +1,140 @@
+# -------------------------------
+# Python
+# -------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.pkl
+*.pickle
+*.h5
+*.joblib
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Pip / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Jupyter (if used)
+.ipynb_checkpoints/
+
+# -------------------------------
+# ML Model Files
+# -------------------------------
+models/
+model_cache/
+trained_models/
+*.model
+*.weights
+*.onnx
+
+# Autoencoder, Isolation Forest, sklearn
+*.sav
+*.npy
+*.npz
+
+# Federated learning metadata
+fl_state/
+federated_sync/
+federated_cache.json
+
+# -------------------------------
+# Database Files
+# -------------------------------
+*.db
+*.sqlite
+*.sqlite3
+db/
+database/
+data_storage/
+
+# Alert data
+alerts/
+alerts_history/
+alert_cache/
+alert_logs/
+
+# -------------------------------
+# Logs
+# -------------------------------
+logs/
+*.log
+*.bak
+nohup.out
+
+# -------------------------------
+# Qt / PyQt / UI
+# -------------------------------
+*.pyqt_ui.py
+*.qrc.py
+*.qt-resource
+*.qmlc
+*.qmf
+*.qmldir
+*.qrc~*
+*.pro.user
+*.pro.user.*
+*.qmake.stash
+
+# PyInstaller / frozen builds
+*.spec
+output/
+dist/
+build/
+
+
+# -------------------------------
+# OS Files
+# -------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# -------------------------------
+# IDEs
+# -------------------------------
+# VSCode
+.vscode/
+.vscode-settings.json
+
+# PyCharm
+.idea/
+*.iml
+
+# Visual Studio
+*.suo
+*.user
+*.cache
+*.vs/
+
+# -------------------------------
+# Cache / Temp
+# -------------------------------
+.cache/
+tmp/
+temp/
+__debug_bin/
+*.tmp
+*.temp
+
+# -------------------------------
+# Environment / Secrets
+# -------------------------------
+*.env
+.envrc
+secrets.json
+config_private.json
+api_keys.json
+
+# Token / credentials
+*.pem
+*.crt
+*.key
+*.token

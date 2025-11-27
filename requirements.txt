@@ -1,0 +1,11 @@
+psutil
+numpy
+scikit-learn
+tensorflow
+scipy
+PyQt5
+PyQtChart
+psycopg2-binary
+python-dotenv
+google-generativeai
+tk

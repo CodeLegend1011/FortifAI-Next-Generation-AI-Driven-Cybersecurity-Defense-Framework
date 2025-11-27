@@ -1,0 +1,4866 @@
+"""
+FortifAI Client Edge Agent - Complete Federated Learning Implementation
+Collects cybersecurity telemetry with intelligent filtering and local ML
+Cross-platform support for Windows and Linux
+
+FIXES:
+- Complete FedAvg implementation with proper statistics aggregation
+- Adaptive sensitivity adjustments based on local variance
+- Proper model parameter extraction and updates
+"""
+
+import os
+import sys
+import time
+import json
+import socket
+import pickle
+import hashlib
+import platform
+import threading
+import psutil
+import numpy as np
+from datetime import datetime, timedelta
+from collections import defaultdict, deque
+from sklearn.ensemble import IsolationForest
+from sklearn.svm import OneClassSVM
+from sklearn.preprocessing import StandardScaler
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from scipy import stats
+import tkinter as tk
+from tkinter import ttk, scrolledtext
+from threading import Lock
+import queue
+import sys
+import codecs
+
+# Handle AF_LINK constant for different platforms
+if hasattr(psutil, 'AF_LINK'):
+    AF_LINK = psutil.AF_LINK
+elif hasattr(socket, 'AF_PACKET'):
+    AF_LINK = socket.AF_PACKET
+else:
+    AF_LINK = -1
+
+if sys.platform == 'win32':
+    # Fix Windows console encoding for Unicode characters
+    try:
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'replace')
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'replace')
+    except:
+        pass  # Ignore if already configured
+    
+# Configuration
+SERVER_HOST = '192.168.56.1'  # Change to server IP
+SERVER_PORT = 9999
+CLIENT_ID = None
+COLLECTION_INTERVAL = 30
+HEARTBEAT_INTERVAL = 60
+
+# Federated Learning Configuration
+ENABLE_FL = True
+FL_UPDATE_INTERVAL = 90  # Send model updates every 5 minutes
+COLLECTION_INTERVAL = 30
+
+class EnhancedAnomalyDetector:
+    """Enhanced statistical anomaly detection with federated learning"""
+    
+    def __init__(self,use_ocsvm=False):
+        self.network_baseline = {'connections': deque(maxlen=200), 'bytes': deque(maxlen=200)}
+        self.process_baseline = {'count': deque(maxlen=200), 'cpu': deque(maxlen=200)}
+        self.file_baseline = {'events': deque(maxlen=200)}
+        self.anomaly_alerts = deque(maxlen=100)
+        # Enhanced model weights
+        self.model_weights = {
+            'version': 0,
+            'network_threshold': 2.0,
+            'process_threshold': 2.0,
+            'file_threshold': 2.0,
+            'network_sensitivity': 1.0,
+            'process_sensitivity': 1.0,
+            'file_sensitivity': 1.0,
+            # Global baseline parameters from federated learning
+            'network_baseline_mean': 0.0,
+            'network_baseline_std': 1.0,
+            'process_baseline_mean': 0.0,
+            'process_baseline_std': 1.0,
+            'file_baseline_mean': 0.0,
+            'file_baseline_std': 1.0,
+            'anomaly_alpha': 0.95,
+            'anomaly_beta': 0.1
+        }
+        
+        # Track local anomalies for reporting
+        # Anomaly tracking
+        self.anomaly_count = 0
+        self.total_detections = 0
+        self.ema_network = None
+        self.ema_process = None
+        self.ema_file = None
+        
+        # --- NEW: ML Models ---
+        self.isolation_forest = None
+        self.autoencoder = None
+        self.use_ocsvm = use_ocsvm
+        self.one_class_svm = None if not use_ocsvm else OneClassSVM(kernel='rbf', nu=0.05)
+        
+        # --- NEW: Thresholds ---
+        self.iso_threshold = -0.5  # Lower score = anomaly
+        self.ae_threshold = None  # Set after training
+        self.zscore_threshold = 5.0
+        
+        self.adaptive_threshold_multiplier = 1.2
+        self.recent_anomaly_rate = deque(maxlen=10)
+        
+        # --- NEW: Last training time ---
+        self.last_training_time = None
+        self.training_interval = 600  
+        
+        self.gui_callback = None
+    
+    # --- NEW: Ensemble detection method ---
+    def detect_anomaly_ensemble(self, feature_vector, feature_names):
+        """
+        Multi-tier ensemble anomaly detection
+        Returns: (is_anomaly, anomaly_info_dict)
+        """
+        self.total_detections += 1
+        anomaly_info = {
+            'is_anomaly': False,
+            'zscore_flag': False,
+            'iso_score': None,
+            'ae_recon_error': None,
+            'ocsvm_prediction': None,
+            'contributing_features': [],
+            'severity': 'normal'
+        }
+        
+        # TIER 1: Z-Score filter (fast)
+        zscore_flags = []
+        for i, (fname, fval) in enumerate(zip(feature_names, feature_vector)):
+            if abs(fval) > self.zscore_threshold:
+                zscore_flags.append(fname)
+        
+        if len(zscore_flags) > 8:  # Multiple extreme features
+            anomaly_info['zscore_flag'] = True
+            anomaly_info['is_anomaly'] = True
+            anomaly_info['contributing_features'] = zscore_flags
+            anomaly_info['severity'] = 'high'
+            self.anomaly_count += 1
+            
+            # ✅ FIX: Generate alert for GUI
+            self._generate_alert(feature_vector, feature_names, anomaly_info)
+            return True, anomaly_info
+        
+        # TIER 2: Isolation Forest
+        if self.isolation_forest is not None:
+            try:
+                iso_score = self.isolation_forest.score_samples([feature_vector])[0]
+                anomaly_info['iso_score'] = float(iso_score)
+                
+                if iso_score < self.iso_threshold:
+                    anomaly_info['is_anomaly'] = True
+                    anomaly_info['severity'] = 'medium'
+                    self.anomaly_count += 1
+                    
+                    # Identify contributing features (highest magnitude)
+                    contrib_indices = np.argsort(np.abs(feature_vector))[-3:]
+                    anomaly_info['contributing_features'] = [feature_names[i] for i in contrib_indices]
+                    
+                    # ✅ FIX: Generate alert for GUI
+                    self._generate_alert(feature_vector, feature_names, anomaly_info)
+                    return True, anomaly_info
+            except Exception as e:
+                print(f"  [ISO] Prediction error: {e}")
+        
+        # TIER 3: Autoencoder
+        if self.autoencoder is not None and self.autoencoder.is_trained:
+            try:
+                is_anomaly_ae, recon_errors = self.autoencoder.detect_anomaly([feature_vector])
+                if is_anomaly_ae is not None and len(recon_errors) > 0:
+                    anomaly_info['ae_recon_error'] = float(recon_errors[0])
+                    
+                    if is_anomaly_ae[0]:
+                        anomaly_info['is_anomaly'] = True
+                        anomaly_info['severity'] = 'medium'
+                        self.anomaly_count += 1
+                        
+                        # Compute per-feature reconstruction error
+                        feature_recon_errors = self._compute_feature_reconstruction_error(feature_vector)
+                        contrib_indices = np.argsort(feature_recon_errors)[-3:]
+                        anomaly_info['contributing_features'] = [feature_names[i] for i in contrib_indices]
+                        
+                        # ✅ FIX: Generate alert for GUI
+                        self._generate_alert(feature_vector, feature_names, anomaly_info)
+                        return True, anomaly_info
+            except Exception as e:
+                print(f"  [AE] Prediction error: {e}")
+        
+        # TIER 4: One-Class SVM (optional)
+        if self.use_ocsvm and self.one_class_svm is not None:
+            try:
+                ocsvm_pred = self.one_class_svm.predict([feature_vector])[0]
+                anomaly_info['ocsvm_prediction'] = int(ocsvm_pred)
+                
+                if ocsvm_pred == -1:  # Anomaly
+                    anomaly_info['is_anomaly'] = True
+                    anomaly_info['severity'] = 'low'
+                    self.anomaly_count += 1
+                    
+                    # ✅ FIX: Generate alert for GUI
+                    self._generate_alert(feature_vector, feature_names, anomaly_info)
+                    return True, anomaly_info
+            except Exception as e:
+                print(f"  [OCSVM] Prediction error: {e}")
+        
+        return False, anomaly_info
+
+    def _build_context_explanation(self, feature_dict, contributing_features):
+        """Build human-readable context explanation based on features"""
+        explanations = []
+        
+        # Network-related features
+        if any('conn' in f or 'network' in f for f in contributing_features):
+            conn_count = feature_dict.get('conn_count', 0)
+            unique_dst = feature_dict.get('unique_dst_ratio', 0)
+            
+            if conn_count > 5:
+                explanations.append(f"  • High network activity detected ({conn_count:.0f} connections)")
+            if unique_dst > 0.7:
+                explanations.append(f"  • Connections to many unique destinations (diversity: {unique_dst:.2f})")
+        
+        # Process-related features
+        if any('proc' in f or 'cpu' in f or 'memory' in f for f in contributing_features):
+            proc_spawn = feature_dict.get('proc_spawn_count', 0)
+            cpu = feature_dict.get('avg_proc_cpu', 0)
+            
+            if proc_spawn > 3:
+                explanations.append(f"  • Multiple processes spawned ({proc_spawn:.0f} processes)")
+            if cpu > 0.5:
+                explanations.append(f"  • High CPU usage detected ({cpu*100:.1f}%)")
+        
+        # File-related features
+        if any('file' in f for f in contributing_features):
+            file_create = feature_dict.get('file_create_count', 0)
+            file_exec = feature_dict.get('file_exec_count', 0)
+            
+            if file_create > 50:
+                explanations.append(f"  • Rapid file creation ({file_create:.0f} files)")
+            if file_exec > 5:
+                explanations.append(f"  • Executable files created/modified ({file_exec:.0f} files)")
+        
+        # Port entropy
+        if 'port_entropy' in contributing_features:
+            entropy = feature_dict.get('port_entropy', 0)
+            if entropy > 4:
+                explanations.append(f"  • High port diversity (entropy: {entropy:.2f}) - possible scanning")
+        
+        return "\n".join(explanations) if explanations else None
+
+
+    # ✅ FIX: Add helper method to generate alerts
+    def _generate_alert(self, feature_vector, feature_names, anomaly_info):
+        """Generate anomaly alert with DETAILED FEATURE EXPLANATIONS"""
+        # Build feature dict
+        feature_dict = {name: float(val) for name, val in zip(feature_names, feature_vector)}
+        
+        # ✅ FIX: Build DETAILED explainability text
+        explanation_parts = []
+        
+        if anomaly_info.get('zscore_flag'):
+            explanation_parts.append("⚠️ Extreme Z-score deviation across multiple features")
+        
+        if anomaly_info.get('iso_score') is not None:
+            iso_score = anomaly_info['iso_score']
+            explanation_parts.append(f"📊 Isolation Forest anomaly score: {iso_score:.4f} (lower = more anomalous)")
+        
+        if anomaly_info.get('ae_recon_error') is not None:
+            ae_error = anomaly_info['ae_recon_error']
+            explanation_parts.append(f"🔧 Autoencoder reconstruction error: {ae_error:.4f} (higher = more anomalous)")
+        
+        # ✅ NEW: Detailed feature analysis
+        contrib = anomaly_info.get('contributing_features', [])
+        if contrib:
+            feature_details = []
+            for feat in contrib[:5]:
+                if feat in feature_dict:
+                    val = feature_dict[feat]
+                    # Human-readable feature names
+                    readable_name = feat.replace('_', ' ').title()
+                    feature_details.append(f"  • {readable_name}: {val:.3f}")
+            
+            if feature_details:
+                explanation_parts.append(f"🔍 Key Contributing Features:\n" + "\n".join(feature_details))
+        
+        # ✅ NEW: Context-specific explanations
+        context_explanation = self._build_context_explanation(feature_dict, contrib)
+        if context_explanation:
+            explanation_parts.append(f"\n📝 Context:\n{context_explanation}")
+        
+        # Create alert
+        alert = {
+            'timestamp': datetime.now().isoformat(),
+            'hostname': socket.gethostname(),
+            'client_id': CLIENT_ID,
+            'severity': anomaly_info.get('severity', 'unknown'),
+            'is_anomaly': anomaly_info.get('is_anomaly'),
+            'zscore_flag': anomaly_info.get('zscore_flag'),
+            'iso_score': anomaly_info.get('iso_score'),
+            'ae_recon_error': anomaly_info.get('ae_recon_error'),
+            'contributing_features': contrib,
+            'feature_vector': feature_dict,
+            'explanation': "\n".join(explanation_parts),
+            'signature': f"{anomaly_info.get('severity','')}_{','.join(contrib[:3])}"
+        }
+        
+        # Check for duplicates
+        recent_signatures = [
+            f"{a.get('severity','')}_{','.join(a.get('contributing_features',[])[:3])}"
+            for a in list(self.anomaly_alerts)[-10:]
+        ]
+        
+        if alert['signature'] not in recent_signatures:
+            self.anomaly_alerts.append(alert)
+            print(f"\n{'='*60}")
+            print(f"⚠️ ANOMALY DETECTED - Severity: {alert['severity'].upper()}")
+            print(f"{'='*60}")
+            print(f"Time: {alert['timestamp']}")
+            print(f"Explanation:\n{alert['explanation']}")
+            print(f"{'='*60}\n")
+    
+    def _compute_feature_reconstruction_error(self, feature_vector):
+        """Compute per-feature reconstruction error for explainability"""
+        try:
+            # ✅ FIX: Check if scaler is fitted before using
+            if not hasattr(self.autoencoder.scaler, 'mean_'):
+                print("  [AE] Warning: Scaler not fitted in reconstruction error computation")
+                return np.zeros(len(feature_vector))
+            
+            X_scaled = self.autoencoder.scaler.transform([feature_vector])
+            X_pred = self.autoencoder.model.predict(X_scaled, verbose=0)
+            feature_errors = np.abs(X_scaled[0] - X_pred[0])
+            return feature_errors
+        except Exception as e:
+            print(f"  [AE] Reconstruction error computation failed: {e}")
+            return np.zeros(len(feature_vector))
+    
+    # --- NEW: FL delta computation and clipping ---
+    def compute_fl_delta(self, last_global_weights):
+        """
+        Compute model delta for federated learning with L2 clipping
+        Returns: (model_delta, metadata)
+        """
+        CLIP_BOUND = 10.0
+        
+        # Compute delta: local - global
+        model_delta = {}
+        for key in self.model_weights.keys():
+            if key in last_global_weights:
+                delta = self.model_weights[key] - last_global_weights[key]
+                model_delta[key] = delta
+        
+        # Add autoencoder weights if available
+        if self.autoencoder is not None and self.autoencoder.is_trained:
+            ae_weights = self.autoencoder.get_weights()
+            if ae_weights:
+                model_delta['autoencoder'] = ae_weights
+        
+        # Compute L2 norm
+        delta_norm = 0.0
+        for key, value in model_delta.items():
+            if key != 'autoencoder' and isinstance(value, (int, float)):
+                delta_norm += value ** 2
+        delta_norm = np.sqrt(delta_norm)
+        
+        # L2 clipping
+        if delta_norm > CLIP_BOUND:
+            scale_factor = CLIP_BOUND / delta_norm
+            for key in model_delta.keys():
+                if key != 'autoencoder' and isinstance(model_delta[key], (int, float)):
+                    model_delta[key] *= scale_factor
+            final_norm = CLIP_BOUND
+        else:
+            final_norm = delta_norm
+        
+        # Metadata
+        metadata = {
+            'samples_used': len(self.network_baseline['connections']),
+            'local_epochs': 1,
+            'final_loss': 0.0,
+            'anomaly_rate': self.anomaly_count / max(self.total_detections, 1),
+            'delta_norm': float(final_norm),
+            'timestamp': int(time.time())
+        }
+        
+        return model_delta, metadata
+    
+    def train_models(self, feature_matrix):
+        """Train models with contamination-aware data cleaning - FIXED"""
+        if feature_matrix is None or len(feature_matrix) < 20:
+            print(f"  [ML] Insufficient data ({len(feature_matrix) if feature_matrix is not None else 0}/20)")
+            return False
+        
+        print(f"\n{'='*60}")
+        print(f"[ML TRAINING] Starting with {len(feature_matrix)} samples")
+        print(f"{'='*60}")
+        
+        # ✅ FIX: Check for NaN/Inf values
+        if np.any(np.isnan(feature_matrix)) or np.any(np.isinf(feature_matrix)):
+            print(f"  [ML] ✗ Invalid values detected (NaN/Inf), cleaning...")
+            feature_matrix = np.nan_to_num(feature_matrix, nan=0.0, posinf=1.0, neginf=0.0)
+        
+        # Pre-clean training data using IQR
+        try:
+            Q1 = np.percentile(feature_matrix, 25, axis=0)
+            Q3 = np.percentile(feature_matrix, 75, axis=0)
+            IQR = Q3 - Q1
+            
+            lower_bound = Q1 - 3 * IQR
+            upper_bound = Q3 + 3 * IQR
+            
+            mask = np.all((feature_matrix >= lower_bound) & (feature_matrix <= upper_bound), axis=1)
+            cleaned_matrix = feature_matrix[mask]
+            
+            removed_count = len(feature_matrix) - len(cleaned_matrix)
+            if removed_count > 0:
+                print(f"  [CLEAN] Removed {removed_count} extreme outliers ({removed_count/len(feature_matrix)*100:.1f}%)")
+            
+            if len(cleaned_matrix) < 15:
+                print(f"  [CLEAN] ⚠️ Too much data removed, using original")
+                cleaned_matrix = feature_matrix
+            
+            feature_matrix = cleaned_matrix
+            
+        except Exception as e:
+            print(f"  [CLEAN] Cleaning failed: {e}, using raw data")
+        
+        training_success = False
+        
+        # ✅ FIX 1: Train Isolation Forest with better parameters
+        try:
+            print("  [ISO] Training Isolation Forest...")
+            self.isolation_forest = IsolationForest(
+                contamination=0.001,  
+                n_estimators=200,   
+                max_samples=min(256, len(feature_matrix)),
+                random_state=42,
+                bootstrap=True
+            )
+            self.isolation_forest.fit(feature_matrix)
+            
+            # Calibrate threshold
+            scores = self.isolation_forest.score_samples(feature_matrix)
+            self.iso_threshold = np.percentile(scores, 1)  
+            
+            print(f"  [ISO] ✓ Trained | Threshold={self.iso_threshold:.4f}")
+            training_success = True
+        except Exception as e:
+            print(f"  [ISO] ✗ Failed: {e}")
+        
+        # ✅ FIX 2: Train Autoencoder with GUARANTEED success
+        try:
+            print("  [AE] Training Autoencoder...")
+            if self.autoencoder is None:
+                self.autoencoder = AutoencoderAnomalyDetector(input_dim=feature_matrix.shape[1])
+            
+            ae_success = self.autoencoder.train(feature_matrix, epochs=10, batch_size=16)
+            
+            if ae_success:
+                # Recompute threshold
+                X_scaled = self.autoencoder.scaler.transform(feature_matrix)
+                X_pred = self.autoencoder.model.predict(X_scaled, verbose=0)
+                recon_errors = np.mean(np.square(X_scaled - X_pred), axis=1)
+                
+                # ✅ FIX: Set threshold at 99.5th percentile (only 0.5% flagged)
+                self.autoencoder.threshold = np.percentile(recon_errors, 99.5)
+                self.ae_threshold = self.autoencoder.threshold
+                
+                print(f"  [AE] ✓ Trained | Threshold={self.ae_threshold:.6f}")
+                training_success = True
+            else:
+                print("  [AE] ✗ Training returned False")
+        except Exception as e:
+            print(f"  [AE] ✗ Failed: {e}")
+        
+        if training_success:
+            self.last_training_time = time.time()
+            print(f"[ML TRAINING] ✓ Complete")
+        
+        return training_success
+    
+    def should_retrain(self, buffer_size):
+        """Check if models should be retrained - OPTIMIZED FREQUENCY"""
+        if self.last_training_time is None:
+            return buffer_size >= 20  # Initial training threshold
+        
+        time_since_training = time.time() - self.last_training_time
+        
+        # Retrain only if:
+        # 1. 15+ minutes passed AND buffer >= 150 samples (substantial new data)
+        # 2. 60+ minutes passed (periodic refresh regardless of buffer)
+        return (time_since_training >= 900 and buffer_size >= 150) or \
+            (time_since_training >= 3600)
+    
+    def update_baseline(self, category, metric, value):
+        """Update baseline with new value and EMA"""
+        if category == 'network':
+            self.network_baseline[metric].append(value)
+            # Update EMA
+            alpha = self.model_weights.get('anomaly_alpha', 0.95)
+            if self.ema_network is None:
+                self.ema_network = value
+            else:
+                self.ema_network = alpha * self.ema_network + (1 - alpha) * value
+        elif category == 'process':
+            self.process_baseline[metric].append(value)
+            alpha = self.model_weights.get('anomaly_alpha', 0.95)
+            if self.ema_process is None:
+                self.ema_process = value
+            else:
+                self.ema_process = alpha * self.ema_process + (1 - alpha) * value
+        elif category == 'file':
+            self.file_baseline[metric].append(value)
+            alpha = self.model_weights.get('anomaly_alpha', 0.95)
+            if self.ema_file is None:
+                self.ema_file = value
+            else:
+                self.ema_file = alpha * self.ema_file + (1 - alpha) * value
+    
+    def detect_anomaly(self, category, metric, value):
+        """Enhanced anomaly detection using local and global baselines"""
+        self.total_detections += 1
+        
+        # Get local baseline
+        if category == 'network':
+            baseline = list(self.network_baseline.get(metric, []))
+        elif category == 'process':
+            baseline = list(self.process_baseline.get(metric, []))
+        elif category == 'file':
+            baseline = list(self.file_baseline.get(metric, []))
+        else:
+            return False, 0.0
+        
+        if len(baseline) < 10:
+            return False, 0.0
+        
+        # Calculate local statistics
+        local_mean = np.mean(baseline)
+        local_std = np.std(baseline)
+        
+        # Get global baseline from federated model
+        global_mean = self.model_weights.get(f'{category}_baseline_mean', local_mean)
+        global_std = self.model_weights.get(f'{category}_baseline_std', local_std)
+        
+        # Combine local and global: 60% local, 40% global
+        combined_mean = 0.6 * local_mean + 0.4 * global_mean
+        combined_std = 0.6 * local_std + 0.4 * global_std
+        
+        if combined_std == 0:
+            return False, 0.0
+        
+        # Calculate z-score
+        z_score = abs((value - combined_mean) / combined_std)
+        
+        # Apply adaptive threshold with sensitivity
+        threshold = self.model_weights.get(f'{category}_threshold', 2.0)
+        sensitivity = self.model_weights.get(f'{category}_sensitivity', 1.0)
+        adjusted_threshold = threshold / sensitivity
+        
+        is_anomaly = z_score > adjusted_threshold
+        
+        if is_anomaly:
+            self.anomaly_count += 1
+        
+        return is_anomaly, z_score
+    
+    def get_model_parameters(self):
+        """Get comprehensive model parameters for federated learning"""
+        # Calculate detailed statistics
+        network_stats = {
+            'mean_connections': float(np.mean(self.network_baseline['connections'])) if len(self.network_baseline['connections']) > 0 else 0.0,
+            'std_connections': float(np.std(self.network_baseline['connections'])) if len(self.network_baseline['connections']) > 0 else 0.0,
+            'mean_bytes': float(np.mean(self.network_baseline['bytes'])) if len(self.network_baseline['bytes']) > 0 else 0.0,
+            'std_bytes': float(np.std(self.network_baseline['bytes'])) if len(self.network_baseline['bytes']) > 0 else 0.0,
+            'variance_connections': float(np.var(self.network_baseline['connections'])) if len(self.network_baseline['connections']) > 1 else 0.0,
+            'ema': float(self.ema_network) if self.ema_network is not None else 0.0
+        }
+        
+        process_stats = {
+            'mean_count': float(np.mean(self.process_baseline['count'])) if len(self.process_baseline['count']) > 0 else 0.0,
+            'std_count': float(np.std(self.process_baseline['count'])) if len(self.process_baseline['count']) > 0 else 0.0,
+            'mean_cpu': float(np.mean(self.process_baseline['cpu'])) if len(self.process_baseline['cpu']) > 0 else 0.0,
+            'std_cpu': float(np.std(self.process_baseline['cpu'])) if len(self.process_baseline['cpu']) > 0 else 0.0,
+            'variance_count': float(np.var(self.process_baseline['count'])) if len(self.process_baseline['count']) > 1 else 0.0,
+            'ema': float(self.ema_process) if self.ema_process is not None else 0.0
+        }
+        
+        file_stats = {
+            'mean_events': float(np.mean(self.file_baseline['events'])) if len(self.file_baseline['events']) > 0 else 0.0,
+            'std_events': float(np.std(self.file_baseline['events'])) if len(self.file_baseline['events']) > 0 else 0.0,
+            'variance_events': float(np.var(self.file_baseline['events'])) if len(self.file_baseline['events']) > 1 else 0.0,
+            'ema': float(self.ema_file) if self.ema_file is not None else 0.0
+        }
+        
+        # Data quality metrics
+        data_quality = {
+            'network_samples': len(self.network_baseline['connections']),
+            'process_samples': len(self.process_baseline['count']),
+            'file_samples': len(self.file_baseline['events']),
+            'collection_timestamp': datetime.now().isoformat(),
+            'data_freshness': 1.0  # Could be calculated based on timestamp
+        }
+        
+        # Anomaly rate (important for cybersecurity)
+        anomaly_rate = self.anomaly_count / max(self.total_detections, 1)
+        
+        return {
+            'weights': self.model_weights.copy(),
+            'statistics': {
+                'network': network_stats,
+                'process': process_stats,
+                'file': file_stats
+            },
+            'data_quality': data_quality,
+            'anomaly_rate': float(anomaly_rate),
+            'total_anomalies': self.anomaly_count
+        }
+    
+    def update_model_parameters(self, new_model):
+        """Update model with aggregated weights from server"""
+        if 'weights' in new_model:
+            old_weights = self.model_weights.copy()
+            self.model_weights.update(new_model['weights'])
+            
+            # Log significant changes
+            changes = []
+            for key in self.model_weights:
+                if key in old_weights:
+                    old_val = old_weights[key]
+                    new_val = self.model_weights[key]
+                    if abs(old_val - new_val) > 0.01:
+                        changes.append(f"{key}: {old_val:.3f} → {new_val:.3f}")
+            
+            if changes:
+                print(f"– Model updated (v{new_model.get('version', 'unknown')})")
+                for change in changes[:5]:  # Show top 5 changes
+                    print(f"  {change}")
+            else:
+                print(f"– Model weights confirmed (v{new_model.get('version', 'unknown')})")
+    
+    def adapt_sensitivity_locally(self):
+        """Locally adapt sensitivity based on recent variance"""
+        # Adapt network sensitivity
+        if len(self.network_baseline['connections']) > 20:
+            recent_variance = np.var(list(self.network_baseline['connections'])[-20:])
+            if recent_variance > 15:  # High local variance
+                self.model_weights['network_sensitivity'] = min(
+                    self.model_weights['network_sensitivity'] * 1.05, 2.0
+                )
+            elif recent_variance < 3:  # Low local variance
+                self.model_weights['network_sensitivity'] = max(
+                    self.model_weights['network_sensitivity'] * 0.95, 0.5
+                )
+        
+        # Adapt process sensitivity
+        if len(self.process_baseline['count']) > 20:
+            recent_variance = np.var(list(self.process_baseline['count'])[-20:])
+            if recent_variance > 8:
+                self.model_weights['process_sensitivity'] = min(
+                    self.model_weights['process_sensitivity'] * 1.05, 2.0
+                )
+            elif recent_variance < 2:
+                self.model_weights['process_sensitivity'] = max(
+                    self.model_weights['process_sensitivity'] * 0.95, 0.5
+                )
+
+# --- NEW: Feature extraction and sliding window management ---
+class FeatureWindowManager:
+    """Manages sliding window feature extraction for ML models"""
+    
+    def __init__(self, window_duration=60, max_windows=1000):
+        self.window_duration = window_duration  # seconds
+        self.max_windows = max_windows
+        self.feature_buffer = deque(maxlen=max_windows)
+        
+        # Running statistics for normalization
+        self.running_mean = {}
+        self.running_std = {}
+        self.running_count = 0
+        
+        # EMA parameters
+        self.ema_alpha = 0.1
+        self.ema_values = {}
+        
+        # Current window accumulator
+        self.current_window = {
+            'start_time': time.time(),
+            'network': {'conn_count': 0, 'unique_dst': set(), 'bytes_sent': 0, 
+                       'bytes_recv': 0, 'ports': [], 'protocols': []},
+            'process': {'spawn_count': 0, 'cpu_samples': [], 'memory_samples': [], 
+                       'proc_names': set()},
+            'filesystem': {'file_create': 0, 'file_exec': 0, 'file_hashes': set()}
+        }
+        self.feature_history = {}
+        
+        self.lock = Lock()
+    
+    def get_window_stats(self):
+        """Get current window statistics for debugging"""
+        with self.lock:
+            return {
+                'elapsed': time.time() - self.current_window['start_time'],
+                'network_events': self.current_window['network']['conn_count'],
+                'process_events': self.current_window['process']['spawn_count'],
+                'file_events': self.current_window['filesystem']['file_create'],
+                'buffer_size': len(self.feature_buffer)
+            }
+        
+    def update_network_event(self, event):
+        """Update current window with network event"""
+        with self.lock:
+            self.current_window['network']['conn_count'] += 1
+            if 'dst_ip' in event:
+                self.current_window['network']['unique_dst'].add(event['dst_ip'])
+            if 'src_port' in event:
+                self.current_window['network']['ports'].append(event['src_port'])
+            if 'protocol' in event:
+                self.current_window['network']['protocols'].append(event['protocol'])
+    
+    def update_process_event(self, event):
+        """Update current window with process event"""
+        with self.lock:
+            self.current_window['process']['spawn_count'] += 1
+            if 'cpu_percent' in event:
+                self.current_window['process']['cpu_samples'].append(event['cpu_percent'])
+            if 'memory_mb' in event:
+                self.current_window['process']['memory_samples'].append(event['memory_mb'])
+            if 'process_name' in event:
+                self.current_window['process']['proc_names'].add(event['process_name'])
+    
+    def update_filesystem_event(self, event):
+        """Update current window with filesystem event"""
+        with self.lock:
+            if event.get('event_type') == 'created':
+                self.current_window['filesystem']['file_create'] += 1
+            if event.get('file_extension') in ['.exe', '.dll', '.so']:
+                self.current_window['filesystem']['file_exec'] += 1
+            if event.get('file_hash'):
+                self.current_window['filesystem']['file_hashes'].add(event['file_hash'])
+    
+    def compute_port_entropy(self, ports):
+        """Calculate Shannon entropy of port distribution"""
+        if not ports:
+            return 0.0
+        from collections import Counter
+        counts = Counter(ports)
+        total = len(ports)
+        entropy = -sum((count/total) * np.log2(count/total) for count in counts.values())
+        return entropy
+    
+    def finalize_window(self):
+        """Finalize window with BOUNDED feature extraction"""
+        with self.lock:
+            elapsed = time.time() - self.current_window['start_time']
+            
+            # Network features
+            net = self.current_window['network']
+            unique_dst_count = len(net['unique_dst'])
+            
+            print(f"  [WINDOW] Finalizing: net_events={net['conn_count']}, "
+                  f"proc_events={self.current_window['process']['spawn_count']}, "
+                  f"file_events={self.current_window['filesystem']['file_create']}")
+            
+            tcp_count = sum(1 for p in net['protocols'] if 'TCP' in str(p))
+            udp_count = sum(1 for p in net['protocols'] if 'UDP' in str(p))
+            total_proto = len(net['protocols'])
+            tcp_ratio = tcp_count / max(total_proto, 1)
+            udp_ratio = udp_count / max(total_proto, 1)
+            
+            port_entropy = self.compute_port_entropy(net['ports'])
+            
+            # Process features
+            proc = self.current_window['process']
+            avg_cpu = np.mean(proc['cpu_samples']) if proc['cpu_samples'] else 0.0
+            avg_memory = np.mean(proc['memory_samples']) if proc['memory_samples'] else 0.0
+            unique_proc_count = len(proc['proc_names'])
+            
+            # Filesystem features
+            fs = self.current_window['filesystem']
+            file_hash_novelty = len(fs['file_hashes'])
+            
+            # ✅ FIX: Apply LOG SCALING + CLIPPING to high-variance features
+            features = {
+                'conn_count': np.clip(np.log1p(net['conn_count']), 0, 10),  # ✅ Log scale
+                'unique_dst_count': np.clip(unique_dst_count, 0, 50),
+                'bytes_sent': np.clip(np.log1p(net['bytes_sent']), 0, 20),  # ✅ Log scale
+                'bytes_recv': np.clip(np.log1p(net['bytes_recv']), 0, 20),  # ✅ Log scale
+                'port_entropy': np.clip(port_entropy, 0, 8),
+                'tcp_ratio': tcp_ratio,
+                'udp_ratio': udp_ratio,
+                'proc_spawn_count': np.clip(np.log1p(proc['spawn_count']), 0, 8),  # ✅ Log scale
+                'avg_proc_cpu': np.clip(avg_cpu / 100.0, 0, 1),  # ✅ Normalize to [0,1]
+                'avg_proc_memory': np.clip(np.log1p(avg_memory) / 10.0, 0, 1),  # ✅ Log + normalize
+                'unique_proc_names': np.clip(unique_proc_count, 0, 100),
+                'file_create_count': np.clip(fs['file_create'], 0, 100),
+                'file_exec_count': np.clip(fs['file_exec'], 0, 20),
+                'file_hash_novelty': np.clip(file_hash_novelty, 0, 50),
+                'timestamp': time.time()
+            }
+            
+            # Normalize
+            normalized_features = self.normalize_features(features)
+            
+            # Add to buffer
+            self.feature_buffer.append(normalized_features)
+            
+            # Reset window
+            self.current_window = {
+                'start_time': time.time(),
+                'network': {'conn_count': 0, 'unique_dst': set(), 'bytes_sent': 0, 
+                        'bytes_recv': 0, 'ports': [], 'protocols': []},
+                'process': {'spawn_count': 0, 'cpu_samples': [], 'memory_samples': [], 
+                        'proc_names': set()},
+                'filesystem': {'file_create': 0, 'file_exec': 0, 'file_hashes': set()}
+            }
+            
+            return normalized_features
+    
+    def normalize_features(self, features):
+        """Normalize features using robust statistics - FIXED"""
+        normalized = {}
+        
+        for key, value in features.items():
+            if key == 'timestamp':
+                normalized[key] = value
+                continue
+            
+            # ✅ FIX: Use robust percentile-based normalization
+            if key not in self.running_mean:
+                self.running_mean[key] = value
+                self.running_std[key] = 1.0  # ✅ START WITH 1.0, NOT 0.0
+                self.ema_values[key] = value
+                self.feature_history[key] = deque(maxlen=100)  # ✅ NEW: Track history
+            
+            # ✅ NEW: Store raw values for percentile calculation
+            self.feature_history[key].append(value)
+            
+            # ✅ FIX: Only update statistics after sufficient data
+            if len(self.feature_history[key]) >= 20:
+                # Use median/MAD for robustness
+                median = np.median(list(self.feature_history[key]))
+                mad = np.median(np.abs(np.array(list(self.feature_history[key])) - median))
+                
+                # Median Absolute Deviation normalization
+                if mad > 1e-6:  # ✅ Avoid division by tiny values
+                    normalized[key] = (value - median) / (1.4826 * mad)
+                else:
+                    # Fall back to min-max scaling
+                    hist_array = np.array(list(self.feature_history[key]))
+                    min_val = np.min(hist_array)
+                    max_val = np.max(hist_array)
+                    if max_val - min_val > 1e-6:
+                        normalized[key] = (value - min_val) / (max_val - min_val)
+                    else:
+                        normalized[key] = 0.0
+            else:
+                # ✅ Early phase: use simple clipping
+                normalized[key] = np.clip(value, -3, 3)
+        
+        return normalized
+    
+    def get_feature_matrix(self):
+        """Get feature buffer as numpy matrix for ML training"""
+        if len(self.feature_buffer) == 0:
+            return None, None  # FIXED: Return tuple instead of just None
+        
+        feature_names = [k for k in self.feature_buffer[0].keys() if k != 'timestamp']
+        matrix = np.array([[w[f] for f in feature_names] for w in self.feature_buffer])
+        print(f"  [FEATURE MATRIX] ✓ Shape: {matrix.shape}, Features: {len(feature_names)}")
+        print(f"  [FEATURE MATRIX] Sample row: {matrix[0][:5]}...")
+        
+        return matrix, feature_names
+    
+    def should_finalize_window(self):
+        """Check if current window should be finalized"""
+        elapsed = time.time() - self.current_window['start_time']
+        return elapsed >= self.window_duration
+
+# --- NEW: Autoencoder for anomaly detection ---
+class AutoencoderAnomalyDetector:
+    """Deep autoencoder for detecting anomalies via reconstruction error"""
+    
+    def __init__(self, input_dim=14, latent_dim=8):
+        self.input_dim = input_dim
+        self.latent_dim = latent_dim
+        self.model = None
+        self.threshold = None
+        self.scaler = StandardScaler()
+        self.is_trained = False
+        
+        self.build_model()
+    
+    def build_model(self):
+        """Build autoencoder architecture"""
+        # Encoder
+        input_layer = keras.Input(shape=(self.input_dim,))
+        encoded = layers.Dense(64, activation='relu')(input_layer)
+        encoded = layers.Dense(32, activation='relu')(encoded)
+        latent = layers.Dense(self.latent_dim, activation='relu', name='latent')(encoded)
+        
+        # Decoder
+        decoded = layers.Dense(32, activation='relu')(latent)
+        decoded = layers.Dense(64, activation='relu')(decoded)
+        output = layers.Dense(self.input_dim, activation='linear')(decoded)
+        
+        # Compile model
+        self.model = keras.Model(inputs=input_layer, outputs=output)
+        self.model.compile(optimizer='adam', loss='mse')
+    
+    def train(self, X, epochs=10, batch_size=16):
+        """Train autoencoder on normal data - FIXED"""
+        if len(X) < 20:
+            print("  [AE] Insufficient data for training (need >= 20 samples)")
+            return False
+        
+        try:
+            # ✅ FIX: Clean input data
+            X_clean = np.nan_to_num(X, nan=0.0, posinf=1.0, neginf=0.0)
+            
+            # ✅ FIX: Fit scaler with validation
+            print(f"  [AE] Fitting scaler on {len(X_clean)} samples...")
+            self.scaler.fit(X_clean)
+            
+            # Verify scaler was fitted
+            if not hasattr(self.scaler, 'mean_') or not hasattr(self.scaler, 'scale_'):
+                print("  [AE] ✗ Scaler fitting failed")
+                return False
+            
+            X_scaled = self.scaler.transform(X_clean)
+            
+            print(f"  [AE] Scaler fitted: mean={self.scaler.mean_[:3]}, scale={self.scaler.scale_[:3]}")
+            
+            # ✅ FIX: Train with early stopping
+            from tensorflow.keras.callbacks import EarlyStopping
+            early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+            
+            history = self.model.fit(
+                X_scaled, X_scaled,
+                epochs=epochs,
+                batch_size=batch_size,
+                verbose=0,
+                validation_split=0.2,
+                callbacks=[early_stop]
+            )
+            
+            # Compute reconstruction errors
+            X_pred = self.model.predict(X_scaled, verbose=0)
+            recon_errors = np.mean(np.square(X_scaled - X_pred), axis=1)
+            
+            # ✅ FIX: Set threshold at 95th percentile
+            self.threshold = np.percentile(recon_errors, 98)
+            self.is_trained = True
+            
+            final_loss = history.history['loss'][-1]
+            val_loss = history.history['val_loss'][-1] if 'val_loss' in history.history else final_loss
+            print(f"  [AE] Training complete: loss={final_loss:.6f}, val_loss={val_loss:.6f}, threshold={self.threshold:.6f}")
+            
+            # ✅ VERIFY: Double-check scaler parameters
+            assert hasattr(self.scaler, 'mean_'), "Scaler mean_ missing after training"
+            assert hasattr(self.scaler, 'scale_'), "Scaler scale_ missing after training"
+            
+            return True
+        
+        except Exception as e:
+            print(f"  [AE] Training error: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def predict(self, X):
+        """Predict reconstruction error for samples"""
+        if not self.is_trained:
+            return None
+        
+        try:
+            # ✅ FIX: Check if scaler is fitted
+            if not hasattr(self.scaler, 'mean_') or not hasattr(self.scaler, 'scale_'):
+                print("  [AE] Warning: Scaler not fitted, fitting now...")
+                self.scaler.fit(X)
+            
+            X_scaled = self.scaler.transform(X)
+            X_pred = self.model.predict(X_scaled, verbose=0)
+            recon_errors = np.mean(np.square(X_scaled - X_pred), axis=1)
+            return recon_errors
+        except Exception as e:
+            print(f"  [AE] Prediction error: {e}")
+            return None
+    
+    def detect_anomaly(self, X):
+        """Detect if samples are anomalies"""
+        recon_errors = self.predict(X)
+        if recon_errors is None:
+            return None, None
+        
+        # ✅ FIX: Handle case where threshold is not set
+        if self.threshold is None:
+            print("  [AE] Warning: Threshold not set, using 95th percentile of current errors")
+            self.threshold = np.percentile(recon_errors, 95)
+        
+        is_anomaly = recon_errors > self.threshold
+        return is_anomaly, recon_errors
+    
+    def get_weights(self):
+        """Extract model weights for federated learning"""
+        if self.model is None:
+            return None
+        
+        weights_dict = {}
+        
+        # Extract layer weights
+        for i, layer in enumerate(self.model.layers):
+            layer_weights = layer.get_weights()
+            if len(layer_weights) > 0:
+                weights_dict[f'layer_{i}_kernel'] = layer_weights[0].tolist()
+                if len(layer_weights) > 1:
+                    weights_dict[f'layer_{i}_bias'] = layer_weights[1].tolist()
+        
+        # ✅ FIX: Include scaler parameters
+        if hasattr(self.scaler, 'mean_') and hasattr(self.scaler, 'scale_'):
+            weights_dict['scaler_mean'] = self.scaler.mean_.tolist()
+            weights_dict['scaler_scale'] = self.scaler.scale_.tolist()
+        
+        # ✅ FIX: Include threshold
+        if self.threshold is not None:
+            weights_dict['threshold'] = float(self.threshold)
+        
+        # ✅ FIX: Include input dimension
+        weights_dict['input_dim'] = self.input_dim
+        
+        return weights_dict
+    
+    def set_weights(self, weights_dict):
+        """Set model weights from federated learning"""
+        try:
+            # Restore model weights
+            for i, layer in enumerate(self.model.layers):
+                kernel_key = f'layer_{i}_kernel'
+                bias_key = f'layer_{i}_bias'
+                
+                if kernel_key in weights_dict:
+                    kernel = np.array(weights_dict[kernel_key])
+                    if bias_key in weights_dict:
+                        bias = np.array(weights_dict[bias_key])
+                        layer.set_weights([kernel, bias])
+                    else:
+                        layer.set_weights([kernel])
+            
+            # ✅ FIX: Restore scaler parameters if available
+            if 'scaler_mean' in weights_dict and 'scaler_scale' in weights_dict:
+                self.scaler.mean_ = np.array(weights_dict['scaler_mean'])
+                self.scaler.scale_ = np.array(weights_dict['scaler_scale'])
+                self.scaler.n_features_in_ = len(self.scaler.mean_)
+                self.scaler.n_samples_seen_ = 100  # Dummy value
+                print("  [AE] ✓ Scaler parameters restored")
+            else:
+                print("  [AE] ⚠️ Scaler parameters not in weights_dict")
+            
+            # ✅ FIX: Restore threshold
+            if 'threshold' in weights_dict:
+                self.threshold = float(weights_dict['threshold'])
+                print(f"  [AE] ✓ Threshold restored: {self.threshold:.6f}")
+            
+            # Mark as trained
+            self.is_trained = True
+            print("  [AE] ✓ Weights updated from global model")
+            
+        except Exception as e:
+            print(f"  [AE] ✗ Error setting weights: {e}")
+            import traceback
+            traceback.print_exc()
+            
+class SystemInfo:
+    """Collect system information"""
+    
+    @staticmethod
+    def get_client_id():
+        """Generate unique client ID based on hardware"""
+        hostname = socket.gethostname()
+        
+        mac_address = "000000000000"
+        try:
+            net_if_addrs = psutil.net_if_addrs()
+            for iface_name, addr_list in net_if_addrs.items():
+                for addr in addr_list:
+                    if (hasattr(addr, 'family') and 
+                        (addr.family == AF_LINK or 
+                         (hasattr(socket, 'AF_PACKET') and addr.family == socket.AF_PACKET))):
+                        mac_raw = addr.address.replace(':', '').replace('-', '').upper()
+                        if mac_raw and mac_raw != '000000000000' and len(mac_raw) == 12:
+                            mac_address = mac_raw
+                            break
+                    elif hasattr(addr, 'address') and addr.address and (':' in addr.address or '-' in addr.address):
+                        mac_raw = addr.address.replace(':', '').replace('-', '').upper()
+                        if len(mac_raw) == 12 and mac_raw != '000000000000':
+                            mac_address = mac_raw
+                            break
+                if mac_address != "000000000000":
+                    break
+        except Exception as e:
+            print(f"Warning: Could not get MAC address: {e}")
+            import random
+            mac_address = hashlib.md5(f"{hostname}{random.random()}".encode()).hexdigest()[:12]
+        
+        unique_str = f"{hostname}_{mac_address}_{platform.system()}"
+        return hashlib.sha256(unique_str.encode()).hexdigest()[:16]
+    
+    @staticmethod
+    def get_system_info():
+        """Get basic system information"""
+        try:
+            ip_address = socket.gethostbyname(socket.gethostname())
+        except:
+            ip_address = '127.0.0.1'
+        
+        return {
+            'client_id': CLIENT_ID,
+            'hostname': socket.gethostname(),
+            'ip_address': ip_address,
+            'os_type': platform.system(),
+            'os_version': platform.version(),
+            'device_role': 'workstation',
+            'department': 'IT',
+            'criticality_level': 'medium'
+        }
+
+class EnhancedNetworkCollector:
+    """Enhanced network telemetry with comprehensive threat detection"""
+    
+    def __init__(self, anomaly_detector):
+        self.last_connections = {}
+        self.dns_cache = {}
+        self.connection_history = defaultdict(lambda: {
+            'count': 0, 'last_seen': None, 'first_seen': None,
+            'bytes_sent': 0, 'bytes_recv': 0, 'ports_used': set()
+        })
+        self.anomaly_detector = anomaly_detector
+        self.collection_count = 0
+        
+        # Connection rate tracking
+        self.connection_timestamps = deque(maxlen=500)
+        self.failed_connections = defaultdict(int)
+        
+        # ========== THREAT INTELLIGENCE ==========
+        # Known malicious ports (C2, backdoors, etc.)
+        self.malicious_ports = {
+            4444, 5555, 6666, 7777, 8888,  # Common RAT/C2 ports
+            31337, 12345, 1337, 1234,  # Classic backdoor ports
+            6667, 6668, 6669, 6697,  # IRC (often used by botnets)
+            9001, 9030, 9050, 9150, 9051,  # Tor
+            1080, 1081,  # SOCKS proxy
+            3128, 8080, 8118,  # Common proxy ports (suspicious if unexpected)
+            5900, 5901, 5902,  # VNC (suspicious if unexpected)
+            2323,  # Alternative Telnet
+            4443, 8443,  # Alternative HTTPS (C2)
+            9999, 10000,  # Common malware ports
+            20, 21,  # FTP (unencrypted)
+            23,  # Telnet (unencrypted)
+            25, 465, 587,  # SMTP (data exfiltration)
+            110, 995, 143, 993,  # Email (data exfiltration)
+            137, 138, 139, 445,  # SMB (lateral movement)
+            1433, 1434,  # MSSQL
+            3306,  # MySQL
+            5432,  # PostgreSQL
+            27017, 27018,  # MongoDB
+            6379,  # Redis
+            11211,  # Memcached
+        }
+        
+        # Suspicious port ranges
+        self.suspicious_port_ranges = [
+            (1024, 1100),  # Often used by malware
+            (4440, 4450),  # Metasploit range
+            (5550, 5560),  # RAT range
+            (6660, 6670),  # IRC range
+            (31330, 31340),  # Backdoor range
+        ]
+        
+        # Known legitimate high-traffic destinations
+        self.safe_destinations = {
+            # Microsoft
+            '*.microsoft.com', '*.windows.com', '*.windowsupdate.com', '*.live.com',
+            '*.azure.com', '*.msedge.net', '*.office.com', '*.office365.com',
+            # Google
+            '*.google.com', '*.googleapis.com', '*.gstatic.com', '*.googlevideo.com',
+            '*.youtube.com', '*.ytimg.com', '*.ggpht.com',
+            # Amazon/AWS
+            '*.amazon.com', '*.amazonaws.com', '*.cloudfront.net',
+            # Cloudflare
+            '*.cloudflare.com', '*.cloudflare-dns.com',
+            # Apple
+            '*.apple.com', '*.icloud.com',
+            # Facebook/Meta
+            '*.facebook.com', '*.fbcdn.net', '*.instagram.com',
+            # Other common
+            '*.akamai.net', '*.akamaized.net', '*.akadns.net',
+            '*.github.com', '*.githubusercontent.com',
+            '*.slack.com', '*.zoom.us',
+        }
+        
+        # Protocol mapping
+        self.port_protocols = {
+            20: 'FTP-Data', 21: 'FTP', 22: 'SSH', 23: 'Telnet',
+            25: 'SMTP', 53: 'DNS', 67: 'DHCP', 68: 'DHCP',
+            80: 'HTTP', 110: 'POP3', 119: 'NNTP', 123: 'NTP',
+            143: 'IMAP', 161: 'SNMP', 162: 'SNMP-Trap',
+            389: 'LDAP', 443: 'HTTPS', 445: 'SMB',
+            465: 'SMTPS', 587: 'SMTP-Sub', 636: 'LDAPS',
+            993: 'IMAPS', 995: 'POP3S',
+            1433: 'MSSQL', 1434: 'MSSQL-Browser',
+            3306: 'MySQL', 3389: 'RDP', 5432: 'PostgreSQL',
+            5900: 'VNC', 6379: 'Redis', 8080: 'HTTP-Proxy',
+            8443: 'HTTPS-Alt', 9050: 'Tor-SOCKS', 27017: 'MongoDB'
+        }
+    
+    def compute_port_entropy(self, ports):
+        """Calculate Shannon entropy of port distribution"""
+        if not ports:
+            return 0.0
+        from collections import Counter
+        counts = Counter(ports)
+        total = len(ports)
+        entropy = -sum((count/total) * np.log2(count/total) for count in counts.values())
+        return entropy
+
+    def collect(self):
+        """Collect network data with ML-DRIVEN threat detection"""
+        network_data = []
+        significant_events = []
+        current_time = datetime.now()
+        
+        try:
+            connections = psutil.net_connections(kind='inet')
+            active_connections = 0
+            unique_destinations = set()
+            protocol_counts = defaultdict(int)
+            ports_used = []
+            
+            net_io = psutil.net_io_counters()
+            current_bytes = net_io.bytes_sent + net_io.bytes_recv if net_io else 0
+            
+            # Metrics for ML feature extraction
+            high_risk_port_count = 0
+            external_ip_count = 0
+            new_connection_count = 0
+            
+            for conn in connections:
+                if conn.status == 'ESTABLISHED':
+                    active_connections += 1
+                    remote_addr = conn.raddr if conn.raddr else None
+                    
+                    if not remote_addr:
+                        continue
+                    
+                    self.feature_manager.update_network_event({
+                        'dst_ip': remote_addr.ip,
+                        'src_port': conn.laddr.port,
+                        'protocol': 'TCP' if conn.type == socket.SOCK_STREAM else 'UDP',
+                        'bytes_sent': 0,  # Placeholder
+                        'bytes_recv': 0   # Placeholder
+                    })
+                    
+                    remote_ip = remote_addr.ip
+                    remote_port = remote_addr.port
+                    local_port = conn.laddr.port
+                    
+                    # ✅ SKIP SERVER AND LOCALHOST EARLY
+                    if remote_ip == SERVER_HOST and remote_port == SERVER_PORT:
+                        continue
+                    if remote_ip in ['127.0.0.1', '::1', 'localhost']:
+                        continue
+                    
+                    unique_destinations.add(remote_ip)
+                    ports_used.append(remote_port)
+                    
+                    # Track connection
+                    conn_key = f"{remote_ip}:{remote_port}"
+                    history = self.connection_history[conn_key]
+                    history['count'] += 1
+                    if history['first_seen'] is None:
+                        history['first_seen'] = current_time
+                        new_connection_count += 1
+                    history['last_seen'] = current_time
+                    history['ports_used'].add(local_port)
+                    
+                    protocol = self._identify_protocol(conn, remote_port)
+                    protocol_counts[protocol] += 1
+                    
+                    if remote_port in self.malicious_ports:
+                        high_risk_port_count += 1
+                    if not self._is_local_ip(remote_ip):
+                        external_ip_count += 1
+                    
+                    dns_name = self.resolve_dns(remote_ip)
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ BUILD ML FEATURE VECTOR
+                    # ═══════════════════════════════════════════════════════
+                    feature_vector = np.array([
+                        float(active_connections) / 100.0,
+                        float(len(unique_destinations)) / max(active_connections, 1),
+                        float(history['count']) / 100.0,
+                        float(len(history['ports_used'])) / 20.0,
+                        1.0 if remote_port in self.malicious_ports else 0.0,
+                        1.0 if not self._is_local_ip(remote_ip) else 0.0,
+                        1.0 if not dns_name else 0.0,
+                        1.0 if dns_name and not self._is_safe_domain(dns_name) else 0.0,
+                        float(remote_port) / 65535.0,
+                        float(protocol_counts.get('TCP', 0)) / max(active_connections, 1),
+                        float(protocol_counts.get('UDP', 0)) / max(active_connections, 1),
+                        float(current_bytes) / 1e9,
+                        float(new_connection_count) / max(active_connections, 1),
+                        self.compute_port_entropy(ports_used) if len(ports_used) > 1 else 0.0
+                    ])
+                    
+                    # FIND THIS SECTION (around line 950):
+                    feature_names = [
+                        'conn_count', 'unique_dst_ratio', 'conn_frequency', 'port_diversity',
+                        'malicious_port', 'external_ip', 'no_dns', 'unknown_domain',
+                        'port_number', 'tcp_ratio', 'udp_ratio', 'total_bytes',
+                        'new_conn_ratio', 'port_entropy'
+                    ]
+                    
+                    # ╔═══════════════════════════════════════════════════════════╗
+                    # ║ ✅ STEP 1: ML ENSEMBLE DETECTION (PRIMARY)
+                    # ╚═══════════════════════════════════════════════════════════╝
+                    
+                    ml_is_anomaly = False
+                    ml_risk_score = 0.0
+                    ml_indicators = []
+                    
+                    if (self.anomaly_detector.isolation_forest is not None or 
+                        (self.anomaly_detector.autoencoder and self.anomaly_detector.autoencoder.is_trained)):
+                        
+                        try:
+                            # ✅ CRITICAL: Actually call the ensemble detector
+                            is_anomaly, anomaly_info = self.anomaly_detector.detect_anomaly_ensemble(
+                                feature_vector,
+                                feature_names
+                            )
+                            
+                            if is_anomaly:
+                                ml_is_anomaly = True
+                                severity_map = {'high': 9.0, 'medium': 6.5, 'low': 4.5}
+                                ml_risk_score = severity_map.get(anomaly_info['severity'], 5.0)
+                                ml_indicators = [f"ml_{ind}" for ind in anomaly_info.get('contributing_features', [])[:3]]
+                                
+                                # ✅ FIX: Log detection for debugging
+                                print(f"  [ML NETWORK] Anomaly detected: {remote_ip}:{remote_port} "
+                                      f"(severity={anomaly_info['severity']}, score={ml_risk_score:.1f})")
+                        
+                        except Exception as e:
+                            print(f"  [ML] Network detection error: {e}")
+                            import traceback
+                            traceback.print_exc()
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ STEP 2: RULE-BASED (ONLY IF ML DIDN'T DETECT)
+                    # ═══════════════════════════════════════════════════════
+                    rule_risk_score = 0.0
+                    rule_indicators = []
+                    
+                    if not ml_is_anomaly:  # ✅ Only evaluate rules if ML didn't flag
+                        # Rule 1: Known malicious ports to external IPs
+                        if remote_port in self.malicious_ports and not self._is_local_ip(remote_ip):
+                            rule_risk_score += 7.0
+                            rule_indicators.append(f'malicious_port:{remote_port}')
+                        
+                        # Rule 2: No DNS + Low port (privileged service)
+                        if not dns_name and not self._is_local_ip(remote_ip) and remote_port < 1024:
+                            rule_risk_score += 4.0
+                            rule_indicators.append('suspicious_no_dns_privileged_port')
+                        
+                        # Rule 3: Very high connection frequency
+                        if history['count'] > 500:
+                            rule_risk_score += 3.0
+                            rule_indicators.append(f'extreme_frequency:{history["count"]}')
+                        
+                        # Rule 4: Multiple local ports to same destination (port scanning)
+                        if len(history['ports_used']) > 20:
+                            rule_risk_score += 5.0
+                            rule_indicators.append(f'port_scanning:{len(history["ports_used"])}')
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ STEP 3: COMBINE DETECTIONS (ML PRIORITY)
+                    # ═══════════════════════════════════════════════════════
+                    should_report = False
+                    final_risk_score = 0.0
+                    detection_method = 'baseline'
+                    threat_indicators = []
+                    
+                    if ml_is_anomaly:
+                        # ML detected anomaly - HIGHEST PRIORITY
+                        final_risk_score = ml_risk_score
+                        threat_indicators = ml_indicators
+                        detection_method = 'ml'
+                        should_report = True
+                        
+                    elif rule_risk_score > 6.0:
+                        # Rule-based detection - MEDIUM PRIORITY
+                        final_risk_score = rule_risk_score
+                        threat_indicators = rule_indicators
+                        detection_method = 'rule'
+                        should_report = True
+                        
+                    else:
+                        # Baseline monitoring - LOW PRIORITY
+                        if history['count'] == 1 and not self._is_local_ip(remote_ip):
+                            # New external connection
+                            final_risk_score = 2.0
+                            threat_indicators = ['new_external_connection']
+                            detection_method = 'baseline'
+                            should_report = True
+                        elif remote_port in self.malicious_ports and self._is_local_ip(remote_ip):
+                            # Malicious port but internal (lower risk)
+                            final_risk_score = 3.0
+                            threat_indicators = ['internal_suspicious_port']
+                            detection_method = 'baseline'
+                            should_report = True
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ REPORT EVENT
+                    # ═══════════════════════════════════════════════════════
+                    if should_report:
+                        record = {
+                            'src_ip': conn.laddr.ip,
+                            'src_port': local_port,
+                            'dst_ip': remote_ip,
+                            'dst_port': remote_port,
+                            'protocol': protocol,
+                            'connection_count': history['count'],
+                            'first_seen': history['first_seen'].isoformat() if history['first_seen'] else None,
+                            'dns_query': dns_name,
+                            'geolocation': self._get_geolocation(remote_ip),
+                            'risk_score': final_risk_score,
+                            'is_anomaly': bool(ml_is_anomaly),
+                            'anomaly_score': float(ml_risk_score) if ml_is_anomaly else 0.0,
+                            'threat_indicators': threat_indicators,
+                            'detection_method': detection_method
+                        }
+                        network_data.append(record)
+            
+            # Update baselines
+            self.anomaly_detector.update_baseline('network', 'connections', active_connections)
+            self.anomaly_detector.update_baseline('network', 'bytes', current_bytes)
+            self.connection_timestamps.append(current_time)
+            
+            # Summary
+            ml_detections = len([r for r in network_data if r.get('detection_method') == 'ml'])
+            if active_connections > 0:
+                significant_events.append({
+                    'event_type': 'network_summary',
+                    'active_connections': active_connections,
+                    'unique_destinations': len(unique_destinations),
+                    'ml_anomalies': ml_detections,
+                    'rule_detections': len([r for r in network_data if r.get('detection_method') == 'rule']),
+                    'timestamp': current_time.isoformat()
+                })
+        
+        except Exception as e:
+            print(f"Network collection error: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        return {
+            'details': network_data[:100],
+            'all_events': network_data,
+            'summary': significant_events
+        }
+    
+    def _identify_protocol(self, conn, port):
+        """Identify application protocol"""
+        base_protocol = 'TCP' if conn.type == socket.SOCK_STREAM else 'UDP'
+        app_protocol = self.port_protocols.get(port, 'Unknown')
+        
+        if app_protocol != 'Unknown':
+            return f"{base_protocol}/{app_protocol}"
+        return f"{base_protocol}:{port}"
+    
+    def _is_local_ip(self, ip):
+        """Check if IP is local/private"""
+        return (ip.startswith('10.') or ip.startswith('192.168.') or 
+                ip.startswith('172.') or ip.startswith('127.') or
+                ip.startswith('169.254.'))  # Link-local
+    
+    def resolve_dns(self, ip):
+        """Attempt reverse DNS lookup with caching"""
+        if ip in self.dns_cache:
+            return self.dns_cache[ip]
+        
+        try:
+            hostname = socket.gethostbyaddr(ip)[0]
+            self.dns_cache[ip] = hostname
+            return hostname
+        except:
+            return None
+    
+    def _get_geolocation(self, ip):
+        """Get geolocation - simplified"""
+        if self._is_local_ip(ip):
+            return 'Local Network'
+        return 'External'
+    
+    def _is_safe_domain(self, dns_name):
+        """Check if domain matches safe destinations"""
+        if not dns_name:
+            return False
+        
+        dns_lower = dns_name.lower()
+        for pattern in self.safe_destinations:
+            if pattern.startswith('*.'):
+                suffix = pattern[2:]
+                if dns_lower.endswith(suffix):
+                    return True
+            elif pattern in dns_lower:
+                return True
+        return False
+    
+    def _calculate_comprehensive_network_risk(self, remote_ip, remote_port, local_port, 
+                                            protocol, dns_name, history, conn):
+        """Calculate comprehensive risk score - ENHANCED DETECTION"""
+        risk = 0.0
+        indicators = []
+        
+        # ✅ SKIP server and localhost
+        if remote_ip == SERVER_HOST and remote_port == SERVER_PORT:
+            return 0.0, ['fortifai_server_connection']
+
+        if remote_ip in ['127.0.0.1', '::1', 'localhost']:
+            return 0.0, ['localhost_connection']
+        
+        # ✅ WHITELIST CHECK
+        if dns_name and self._is_safe_domain(dns_name):
+            # Even safe domains get minimal risk for tracking
+            return 0.5, ['known_safe_domain']
+        
+        # ========== PORT-BASED RISK ==========
+        # Known malicious ports (INCREASED RISK)
+        if remote_port in self.malicious_ports:
+            risk += 8.0  # Increased from 6.0
+            indicators.append(f'known_malicious_port:{remote_port}')
+        
+        # Suspicious port ranges
+        for start, end in self.suspicious_port_ranges:
+            if start <= remote_port <= end:
+                risk += 5.0  # Increased from 4.0
+                indicators.append(f'suspicious_port_range:{remote_port}')
+                break
+        
+        # ========== PROTOCOL-BASED RISK ==========
+        # Unencrypted protocols to external hosts
+        if any(x in protocol for x in ['FTP', 'Telnet', 'HTTP:']):
+            if not self._is_local_ip(remote_ip):
+                risk += 3.0  # Increased from 2.0
+                indicators.append('unencrypted_protocol_external')
+        
+        # Unknown protocol on suspicious port
+        if 'Unknown' in protocol:
+            if remote_port < 1024 or remote_port in self.malicious_ports:
+                risk += 2.0  # Increased from 1.5
+                indicators.append('unknown_protocol_suspicious_port')
+        
+        # ========== DESTINATION-BASED RISK ==========
+        if not self._is_local_ip(remote_ip):
+            risk += 1.5  # Increased base external connection risk from 1.0
+            
+            # No DNS = suspicious
+            if not dns_name:
+                risk += 2.0  # Increased from 1.0
+                indicators.append('no_reverse_dns_external')
+            
+            # Unknown domain (not in safe list)
+            elif dns_name and not self._is_safe_domain(dns_name):
+                risk += 1.0
+                indicators.append('unknown_external_domain')
+        
+        # ========== CONNECTION PATTERN RISK ==========
+        # Very frequent connections (potential C2)
+        if history['count'] > 200:  # Lowered threshold from 500
+            risk += 3.0  # Increased from 2.0
+            indicators.append(f'very_high_frequency:{history["count"]}')
+        elif history['count'] > 100:  # Lowered from 500
+            risk += 2.0
+            indicators.append(f'high_frequency_connection:{history["count"]}')
+        
+        # Multiple local ports to same destination (port scanning)
+        if len(history['ports_used']) > 15:  # Lowered from 20
+            risk += 4.0  # Increased from 3.0
+            indicators.append(f'port_scanning:{len(history["ports_used"])}')
+        elif len(history['ports_used']) > 8:  # New threshold
+            risk += 2.0
+            indicators.append(f'multiple_ports_probing:{len(history["ports_used"])}')
+        
+        # ========== TIMING-BASED RISK ==========
+        # Brand new connection to malicious port
+        if history['count'] == 1:
+            if remote_port in self.malicious_ports:
+                risk += 3.0  # Increased from 2.0
+                indicators.append('first_connection_malicious_port')
+            elif not self._is_local_ip(remote_ip) and not dns_name:
+                risk += 1.5
+                indicators.append('new_external_no_dns')
+        
+        # ========== DATABASE/SERVICE EXPOSURE ==========
+        # Database ports to external (critical risk)
+        if remote_port in [1433, 1434, 3306, 5432, 27017, 6379, 11211]:
+            if not self._is_local_ip(remote_ip):
+                risk += 6.0  # Increased from 4.0
+                indicators.append(f'database_port_external:{remote_port}')
+            elif history['count'] > 50:  # Even internal DB with high frequency
+                risk += 2.0
+                indicators.append(f'high_frequency_database_access:{remote_port}')
+        
+        # ========== TOR/PROXY/ANONYMIZATION ==========
+        if remote_port in [9050, 9150, 1080, 1081, 3128, 8080]:
+            risk += 4.0  # Increased from 3.0
+            indicators.append('anonymization_detected')
+        
+        # ========== RDP/REMOTE ACCESS ==========
+        if remote_port == 3389:  # RDP
+            if not self._is_local_ip(remote_ip):
+                risk += 5.0
+                indicators.append('external_rdp_connection')
+        
+        # ========== IRC/BOTNET INDICATORS ==========
+        if remote_port in [6667, 6668, 6669, 6697]:
+            risk += 5.0
+            indicators.append('irc_potential_botnet')
+        
+        return min(risk, 10.0), indicators
+
+class EnhancedProcessCollector:
+    """Enhanced process collector with threat detection"""
+    
+    def __init__(self, anomaly_detector):
+        self.process_cache = {}
+        self.suspicious_processes = [
+            'mimikatz', 'psexec', 'procdump', 'netcat', 'nc.exe',
+            'pwdump', 'wce.exe', 'gsecdump', 'fgdump', 'crackmapexec',
+            'metasploit', 'meterpreter', 'beacon', 'cobalt', 'empire',
+            'lazagne', 'dumpert', 'nanodump', 'sqlmap', 'hydra'
+        ]
+        
+        # ========== SAFE PATHS WHITELIST ==========
+        self.safe_paths = [
+            'program files', 'program files (x86)', 
+            'windows\\system32', 'windows\\syswow64',
+            'google', 'microsoft', 'adobe', 'mozilla', 'apple',
+            'steam', 'epic games', 'nvidia', 'amd', 'intel',
+            'python', 'node', 'npm', 'java', 'git',
+            'visual studio', 'vscode', 'pycharm', 'intellij',
+            'slack', 'discord', 'zoom', 'teams', 'chrome', 'firefox'
+        ]
+        
+        # ========== SUSPICIOUS COMMAND LINE PATTERNS ==========
+        self.suspicious_cmdline_patterns = [
+            # PowerShell obfuscation
+            'powershell -enc', '-encodedcommand', '-e ', '-nop', '-w hidden',
+            'invoke-expression', 'invoke-webrequest', 'downloadstring', 'iex',
+            'bypass', '-noni', 'hidden', '-windowstyle hidden',
+            # Credential dumping
+            'sekurlsa', 'lsadump', 'sam', 'credentials', 'passwords',
+            # Remote execution
+            'psexec', 'wmic process call create', 'schtasks /create',
+            # Reverse shells
+            'ncat', 'nc.exe', 'powercat', 'tcp', 'shell',
+            # Obfuscation
+            'base64', 'frombase64string', 'gzip', 'compress',
+            # Network recon
+            'net user', 'net group', 'net localgroup', 'nltest', 'dsquery'
+        ]
+        
+        self.anomaly_detector = anomaly_detector
+        self.baseline_process_count = deque(maxlen=20)
+    
+    def collect(self):
+        """Collect process data with ML-DRIVEN threat detection"""
+        process_data = []
+        high_risk_processes = []
+        
+        # Irrelevant system processes to skip
+        IGNORE_PROCESSES = {
+            'system idle process', 'system', 'memcompression', 'registry', 'idle',
+            'dwm.exe', 'csrss.exe', 'wininit.exe', 'services.exe', 'lsass.exe',
+            'svchost.exe', 'winlogon.exe', 'smss.exe', 'audiodg.exe'
+        }
+        
+        # Trusted applications
+        TRUSTED_PROCESSES = {
+            'explorer.exe', 'chrome.exe', 'firefox.exe', 'msedge.exe', 'brave.exe',
+            'code.exe', 'pycharm64.exe', 'notepad.exe', 'taskmgr.exe',
+            'python.exe', 'pythonw.exe', 'conhost.exe', 'cmd.exe', 'powershell.exe',
+            'discord.exe', 'slack.exe', 'teams.exe', 'zoom.exe', 'outlook.exe'
+        }
+        
+        try:
+            total_processes = 0
+            high_cpu_count = 0
+            high_memory_count = 0
+            total_cpu = 0.0
+            
+            script_spawned_count = 0
+            temp_execution_count = 0
+            
+            for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 
+                                            'memory_info', 'create_time', 'exe', 'cmdline']):
+                try:
+                    pinfo = proc.info
+                    process_name = pinfo.get('name', '').lower()
+                    
+                    if process_name in IGNORE_PROCESSES:
+                        continue
+                    
+                    mem_info = pinfo.get('memory_info')
+                    memory_mb = mem_info.rss / (1024 * 1024) if mem_info else 0
+                    cpu_percent = pinfo.get('cpu_percent', 0)
+                    
+                    self.feature_manager.update_process_event({
+                        'process_name': pinfo['name'],
+                        'cpu_percent': cpu_percent,
+                        'memory_mb': memory_mb
+                    })
+                    
+                    total_processes += 1
+                    
+                    mem_info = pinfo.get('memory_info')
+                    memory_mb = mem_info.rss / (1024 * 1024) if mem_info else 0
+                    cpu_percent = pinfo.get('cpu_percent', 0)
+                    total_cpu += cpu_percent
+                    
+                    if cpu_percent > 50:
+                        high_cpu_count += 1
+                    if memory_mb > 500:
+                        high_memory_count += 1
+                    
+                    exe_path = pinfo.get('exe')
+                    cmdline = pinfo.get('cmdline')
+                    cmdline_str = ' '.join(cmdline) if cmdline else ''
+                    
+                    if exe_path and 'temp' in exe_path.lower():
+                        temp_execution_count += 1
+                    
+                    # Get parent
+                    parent = None
+                    parent_name = None
+                    try:
+                        parent_proc = psutil.Process(proc.ppid())
+                        parent = proc.ppid()
+                        parent_name = parent_proc.name().lower()
+                        
+                        if any(p in parent_name for p in ['powershell', 'cmd', 'wscript', 'cscript']):
+                            script_spawned_count += 1
+                    except:
+                        pass
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ BUILD ML FEATURE VECTOR
+                    # ═══════════════════════════════════════════════════════
+                    feature_vector = np.array([
+                        float(cpu_percent) / 100.0,
+                        float(memory_mb) / 5000.0,
+                        1.0 if exe_path and 'temp' in exe_path.lower() else 0.0,
+                        1.0 if exe_path and any(x in exe_path.lower() for x in ['downloads', 'desktop']) else 0.0,
+                        1.0 if parent_name and 'powershell' in parent_name else 0.0,
+                        1.0 if parent_name and 'cmd' in parent_name else 0.0,
+                        1.0 if any(susp in process_name for susp in self.suspicious_processes[:5]) else 0.0,
+                        float(len(cmdline_str)) / 500.0 if cmdline_str else 0.0,
+                        float(sum(1 for p in self.suspicious_cmdline_patterns if p in cmdline_str.lower())) / 10.0,
+                        1.0 if exe_path and 'appdata\\roaming' in exe_path.lower() else 0.0,
+                        1.0 if not exe_path or not self._is_safe_path(exe_path) else 0.0,
+                        float(script_spawned_count) / max(total_processes, 1),
+                        float(temp_execution_count) / max(total_processes, 1),
+                        float(total_processes) / 200.0
+                    ])
+
+                    # FIND THIS SECTION:
+                    feature_names = [
+                        'cpu_percent', 'memory_mb', 'temp_execution', 'user_directory',
+                        'powershell_parent', 'cmd_parent', 'suspicious_name', 'cmdline_length',
+                        'suspicious_cmdline_flags', 'appdata_roaming', 'unsafe_path',
+                        'script_spawn_ratio', 'temp_exec_ratio', 'process_count'
+                    ]
+
+# INSERT IMMEDIATELY AFTER:
+                    # ✅ FIX: INVOKE ML DETECTION ON EVERY PROCESS EVENT
+                    ml_is_anomaly = False
+                    ml_risk_score = 0.0
+                    ml_indicators = []
+
+                    if (self.anomaly_detector.isolation_forest is not None or 
+                        (self.anomaly_detector.autoencoder and self.anomaly_detector.autoencoder.is_trained)):
+                        
+                        try:
+                            is_anomaly, anomaly_info = self.anomaly_detector.detect_anomaly_ensemble(
+                                feature_vector,
+                                feature_names
+                            )
+                            
+                            if is_anomaly:
+                                ml_is_anomaly = True
+                                severity_map = {'high': 9.0, 'medium': 6.5, 'low': 4.5}
+                                ml_risk_score = severity_map.get(anomaly_info['severity'], 5.0)
+                                ml_indicators = [f"ml_{ind}" for ind in anomaly_info.get('contributing_features', [])[:3]]
+                                
+                                print(f"  [ML PROCESS] Anomaly detected: {process_name} (PID={pinfo['pid']}) "
+                                      f"(severity={anomaly_info['severity']}, score={ml_risk_score:.1f})")
+                        
+                        except Exception as e:
+                            print(f"  [ML] Process detection error: {e}")
+
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ STEP 2: RULE-BASED (ONLY IF ML DIDN'T DETECT)
+                    # ═══════════════════════════════════════════════════════
+                    rule_risk_score = 0.0
+                    rule_indicators = []
+
+                    if not ml_is_anomaly:  # ✅ Only evaluate rules if ML didn't flag
+                        # Rule 1: Known malicious process names
+                        if any(susp in process_name for susp in self.suspicious_processes[:10]):
+                            rule_risk_score += 8.0
+                            rule_indicators.append('known_malicious_process')
+                        
+                        # Rule 2: Temp execution with suspicious name
+                        if exe_path and 'temp' in exe_path.lower() and process_name not in TRUSTED_PROCESSES:
+                            # Check if suspicious patterns in name
+                            if any(p in process_name for p in ['crack', 'keygen', 'hack', 'exploit', 'payload']):
+                                rule_risk_score += 6.0
+                                rule_indicators.append('temp_execution_suspicious_name')
+                        
+                        # Rule 3: PowerShell with encoded command
+                        if 'powershell' in process_name and cmdline_str:
+                            if any(flag in cmdline_str.lower() for flag in ['-enc', '-encodedcommand', 'bypass', '-w hidden']):
+                                rule_risk_score += 7.0
+                                rule_indicators.append('powershell_obfuscation')
+                        
+                        # Rule 4: Office spawning executable
+                        if parent_name and any(office in parent_name for office in ['winword', 'excel', 'powerpnt']):
+                            if exe_path and not self._is_safe_path(exe_path):
+                                rule_risk_score += 7.0
+                                rule_indicators.append('office_macro_execution')
+                        
+                        # Rule 5: Downloads/Desktop execution
+                        if exe_path and any(x in exe_path.lower() for x in ['downloads\\', 'desktop\\']):
+                            if process_name not in TRUSTED_PROCESSES:
+                                rule_risk_score += 3.0
+                                rule_indicators.append('user_directory_execution')
+
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ STEP 3: COMBINE DETECTIONS (ML PRIORITY)
+                    # ═══════════════════════════════════════════════════════
+                    final_risk_score = 0.0
+                    detection_method = 'baseline'
+                    threat_indicators = []
+                    should_report = False
+
+                    if ml_is_anomaly:
+                        # ML detected anomaly - HIGHEST PRIORITY
+                        final_risk_score = ml_risk_score
+                        threat_indicators = ml_indicators
+                        detection_method = 'ml'
+                        should_report = True
+                        
+                    elif rule_risk_score > 6.0:
+                        # Rule-based detection - MEDIUM PRIORITY
+                        final_risk_score = rule_risk_score
+                        threat_indicators = rule_indicators
+                        detection_method = 'rule'
+                        should_report = True
+                        
+                    else:
+                        # Baseline monitoring - LOW PRIORITY
+                        if cpu_percent > 80 or memory_mb > 2000:
+                            final_risk_score = 3.0
+                            threat_indicators = ['high_resource_usage']
+                            detection_method = 'resource'
+                            should_report = True
+                        elif total_processes % 20 == 0 and process_name not in TRUSTED_PROCESSES:
+                            # Sample every 20th process for monitoring
+                            final_risk_score = 1.0
+                            threat_indicators = ['sampled_process']
+                            detection_method = 'baseline'
+                            should_report = True
+
+                    # ✅ Skip trusted processes with low risk
+                    if process_name in TRUSTED_PROCESSES and final_risk_score < 5.0:
+                        should_report = False
+
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ REPORT EVENT
+                    # ═══════════════════════════════════════════════════════
+                    if should_report:
+                        exe_hash = None
+                        if exe_path and os.path.exists(exe_path) and final_risk_score > 6.0:
+                            exe_hash = self.calculate_file_hash(exe_path)
+                        
+                        record = {
+                            'process_name': pinfo['name'],
+                            'pid': pinfo['pid'],
+                            'ppid': parent,
+                            'parent_name': parent_name,
+                            'executable_path': exe_path,
+                            'executable_hash': exe_hash,
+                            'command_line_preview': cmdline_str[:100] if final_risk_score > 7.0 else None,
+                            'start_time': datetime.fromtimestamp(pinfo['create_time']),
+                            'cpu_percent': cpu_percent,
+                            'memory_mb': memory_mb,
+                            'privilege_level': pinfo.get('username', 'unknown'),
+                            'risk_score': final_risk_score,
+                            'threat_indicators': threat_indicators,
+                            'detection_method': detection_method
+                        }
+                        
+                        if final_risk_score > 7.0:
+                            high_risk_processes.append(record)
+                        else:
+                            process_data.append(record)
+                
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    continue
+            
+            self.anomaly_detector.update_baseline('process', 'count', total_processes)
+            self.anomaly_detector.update_baseline('process', 'cpu', total_cpu)
+            
+            is_anomaly, z_score = self.anomaly_detector.detect_anomaly('process', 'count', total_processes)
+            
+            ml_detections = len([p for p in (process_data + high_risk_processes) if p.get('detection_method') == 'ml'])
+            
+            summary = {
+                'event_type': 'process_summary',
+                'total_processes': total_processes,
+                'high_cpu_processes': high_cpu_count,
+                'high_memory_processes': high_memory_count,
+                'high_risk_count': len(high_risk_processes),
+                'ml_detections': ml_detections,
+                'rule_detections': len(process_data + high_risk_processes) - ml_detections,
+                'is_anomalous_count': bool(is_anomaly),
+                'anomaly_score': float(z_score) if is_anomaly else 0.0,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            if len(process_data) == 0 and len(high_risk_processes) == 0:
+                try:
+                    top_procs = sorted(
+                        psutil.process_iter(['pid','name','cpu_percent','memory_info']),
+                        key=lambda p: (p.info.get('cpu_percent',0) + (p.info.get('memory_info').rss/1024/1024 if p.info.get('memory_info') else 0)),
+                        reverse=True
+                    )[:5]
+
+                    summary['top_processes'] = [
+                        {
+                            'process_name': p.info.get('name'),
+                            'pid': p.info.get('pid'),
+                            'cpu_percent': p.info.get('cpu_percent', 0),
+                            'memory_mb': (p.info.get('memory_info').rss/1024/1024 if p.info.get('memory_info') else 0)
+                        }
+                        for p in top_procs
+                    ]
+                except:
+                    pass
+        
+        except Exception as e:
+            print(f"Process collection error: {e}")
+            return {'details': [], 'high_risk': [], 'summary': {}}
+        
+        return {
+            'details': process_data[:30],
+            'high_risk': high_risk_processes[:20],
+            'summary': summary
+        }
+    
+    # ADD THIS METHOD (if not already present):
+    def calculate_file_hash(self, filepath):
+        """Calculate SHA256 hash of executable - SHARED WITH FILESYSTEM"""
+        try:
+            if not os.path.exists(filepath):
+                return None
+            
+            if not os.access(filepath, os.R_OK):
+                return None
+            
+            file_size = os.path.getsize(filepath)
+            
+            # Skip files > 100MB
+            if file_size > 100 * 1024 * 1024:
+                return None
+            
+            sha256 = hashlib.sha256()
+            chunk_size = 8192
+            
+            with open(filepath, 'rb') as f:
+                while True:
+                    chunk = f.read(chunk_size)
+                    if not chunk:
+                        break
+                    sha256.update(chunk)
+            
+            return sha256.hexdigest()
+        
+        except (PermissionError, FileNotFoundError, OSError):
+            return None
+        except Exception as e:
+            print(f"  [HASH] Error: {e}")
+            return None
+    
+    def _is_safe_path(self, path):
+        """Check if path is in safe locations"""
+        if not path:
+            return False
+        
+        path_lower = path.lower()
+        return any(safe in path_lower for safe in self.safe_paths)
+    
+    def _calculate_comprehensive_process_risk(self, name, path, cmdline, memory, cpu, pid=None):
+        """Calculate comprehensive process risk - ENHANCED DETECTION"""
+        import psutil
+
+        risk = 0.0
+        indicators = []
+
+        name_lower = name.lower() if name else ''
+        path_lower = path.lower() if path else ''
+        cmdline_lower = cmdline.lower() if cmdline else ''
+
+        # ✅ EARLY EXIT for safe software
+        if self._is_safe_path(path):
+            # Still check for suspicious command lines
+            if any(p in cmdline_lower for p in ['bypass', '-enc', 'invoke-expression', 'downloadstring']):
+                risk = 6.0
+                indicators.append('suspicious_cmdline_safe_path')
+                return 6.0, indicators
+            return 0.5, ['safe_location']
+
+        # ========== CRITICAL MALWARE NAMES (INSTANT HIGH RISK) ==========
+        critical_malware = [
+            'mimikatz', 'keylog', 'pwdump', 'gsecdump', 'wce',
+            'lazagne', 'dumpert', 'nanodump', 'procdump',
+            'metasploit', 'meterpreter', 'beacon', 'cobalt',
+            'empire', 'crackmapexec', 'psexec'
+        ]
+        
+        for malware in critical_malware:
+            if malware in name_lower:
+                risk += 9.0
+                indicators.append(f'critical_malware:{malware}')
+                return 9.0, indicators  # Immediate return
+
+        # ========== SUSPICIOUS PROCESS NAMES ==========
+        for suspicious in self.suspicious_processes:
+            if suspicious in name_lower:
+                risk += 8.0  # Increased from 7.0
+                indicators.append(f'known_suspicious_process:{suspicious}')
+                break
+
+        # ========== PATH-BASED RISK ==========
+        if path_lower:
+            # User-space execution
+            if any(x in path_lower for x in ['\\downloads\\', '\\desktop\\', '\\public\\']):
+                risk += 4.0  # Increased from 3.0
+                indicators.append('user_directory_execution')
+
+            # Temp execution (VERY SUSPICIOUS)
+            elif 'temp' in path_lower or 'tmp' in path_lower:
+                if not any(safe in path_lower for safe in ['microsoft', 'google', 'windows']):
+                    risk += 3.0  # Increased from 2.0
+                    indicators.append('temp_execution')
+
+            # AppData\Roaming
+            elif 'appdata\\roaming' in path_lower:
+                if any(susp in name_lower for susp in self.suspicious_processes[:5]):
+                    risk += 3.0  # Increased from 2.0
+                    indicators.append('appdata_roaming_suspicious')
+
+            # ProgramData
+            elif 'programdata' in path_lower:
+                risk += 2.0  # Increased from 1.5
+                indicators.append('programdata_execution')
+
+        # ========== COMMAND LINE ANALYSIS (ENHANCED) ==========
+        cmdline_flags = 0
+        matched_patterns = []
+
+        # Check ALL suspicious patterns
+        for pattern in self.suspicious_cmdline_patterns:
+            if pattern in cmdline_lower:
+                cmdline_flags += 1
+                matched_patterns.append(pattern)
+
+        if cmdline_flags >= 3:
+            risk += 8.0  # Increased from 7.0
+            indicators.append(f'highly_suspicious_cmdline:{",".join(matched_patterns[:3])}')
+        elif cmdline_flags == 2:
+            risk += 6.0  # Increased from 5.0
+            indicators.append(f'suspicious_cmdline:{",".join(matched_patterns)}')
+        elif cmdline_flags == 1:
+            risk += 3.0  # Increased from 2.0
+            indicators.append(f'suspicious_cmdline_pattern:{matched_patterns[0]}')
+
+        # ========== SPECIFIC DANGEROUS PATTERNS ==========
+        # PowerShell encoded commands (CRITICAL)
+        if 'powershell' in name_lower:
+            if any(x in cmdline_lower for x in ['-enc', '-encodedcommand', 'frombase64string']):
+                risk += 7.0
+                indicators.append('powershell_encoded_command')
+            elif 'bypass' in cmdline_lower:
+                risk += 6.0
+                indicators.append('powershell_execution_policy_bypass')
+            elif '-w hidden' in cmdline_lower or 'windowstyle hidden' in cmdline_lower:
+                risk += 5.0
+                indicators.append('powershell_hidden_window')
+
+        # ========== RESOURCE USAGE ==========
+        if memory and memory > 5000:
+            risk += 2.5  # Increased from 2.0
+            indicators.append('very_high_memory')
+        elif memory and memory > 3000:
+            risk += 1.5  # Increased from 1.0
+            indicators.append('high_memory')
+
+        if cpu and cpu > 95:
+            risk += 2.0  # Increased from 1.5
+            indicators.append('very_high_cpu')
+        elif cpu and cpu > 85:
+            risk += 1.0  # Increased from 0.5
+            indicators.append('high_cpu')
+
+        # ========== PROCESS LINEAGE ANALYSIS ==========
+        if pid:
+            try:
+                proc = psutil.Process(pid)
+                parent = proc.parent()
+
+                if parent:
+                    parent_name = parent.name().lower()
+
+                    # Script spawning executables (VERY SUSPICIOUS)
+                    suspicious_parents = ['powershell', 'cmd.exe', 'wscript.exe', 'cscript.exe', 'mshta.exe']
+                    if any(p in parent_name for p in suspicious_parents):
+                        risk += 4.0  # Increased from 3.0
+                        indicators.append(f'script_spawned_process:{parent_name}')
+
+                    # Download execution via script
+                    if ('\\downloads\\' in path_lower and 
+                        any(p in parent_name for p in suspicious_parents)):
+                        risk += 5.0  # Increased from 4.0
+                        indicators.append('download_script_execution')
+
+                    # Office macro execution (CRITICAL)
+                    office_sources = ['winword.exe', 'excel.exe', 'powerpnt.exe']
+                    if parent_name in office_sources:
+                        risk += 6.0  # Increased from 4.0
+                        indicators.append('office_macro_spawned_process')
+
+            except Exception:
+                pass
+
+        return min(risk, 10.0), indicators
+
+
+class EnhancedFilesystemCollector:
+    """Enhanced filesystem monitoring with comprehensive threat detection"""
+    
+    def __init__(self, anomaly_detector):
+        self.watched_directories = self.get_critical_directories()
+        self.anomaly_detector = anomaly_detector
+        self.last_scan = {}
+        self.file_event_count = 0
+        self.known_hashes = set()  # Track known file hashes
+        self.file_creation_rate = deque(maxlen=100)  # Track creation timestamps
+        self.baseline_extensions = defaultdict(int)  # Normal extension distribution
+        self.anomaly_alerts = deque(maxlen=100)
+                   
+        # ========== THREAT INTELLIGENCE ==========
+        # Truly malicious extensions (not just executables)
+        self.high_risk_extensions = {
+            '.exe', '.scr', '.pif', '.com',  # Windows executables
+            '.hta', '.vbs', '.vbe', '.ws', '.wsf', '.wsc', '.wsh',  # Scripts
+            '.ps1', '.psm1', '.psd1',  # PowerShell
+            '.bat', '.cmd',  # Batch files
+            '.msp', '.mst',  # Installers
+            '.dll', '.ocx', '.cpl', '.drv',  # Libraries/drivers
+            '.sys', '.scf', '.inf',  # System files
+            '.reg', '.hiv',  # Registry files
+            '.docm', '.xlsm', '.pptm', '.dotm',  # Macro-enabled Office
+            '.jar', '.jnlp',  # Java
+            '.appx', '.appxbundle', '.msix',  # Modern Windows packages
+        }
+        
+        # Double extension patterns (common malware trick)
+        self.double_extension_tricks = {
+            '.pdf.exe', '.doc.exe', '.jpg.exe', '.png.exe', '.mp3.exe',
+            '.txt.scr', '.pdf.scr', '.doc.scr', '.jpg.scr',
+            '.pdf.js', '.doc.js', '.txt.js',
+            '.pdf.vbs', '.doc.vbs', '.txt.vbs',
+            '.doc.bat', '.pdf.bat', '.txt.bat',
+        }
+        
+        # Suspicious filename patterns (regex-like matching)
+        self.suspicious_patterns = [
+            'crack', 'keygen', 'patch', 'loader', 'activator', 'serial',
+            'hack', 'cheat', 'exploit', 'payload', 'inject', 'dump',
+            'mimikatz', 'pwdump', 'gsecdump', 'wce', 'lazagne',
+            'shell', 'backdoor', 'trojan', 'virus', 'malware', 'ransom',
+            'cryptolocker', 'wannacry', 'petya', 'locky',
+            'keylog', 'stealer', 'rat', 'botnet', 'rootkit',
+            'bypass', 'disable', 'kill_av', 'killav', 'stop_av',
+        ]
+        
+        self.malware_signatures = [
+            'mimikatz', 'keylog', 'ransom', 'cryptolocker', 'wannacry', 'petya',
+            'trojan', 'backdoor', 'rootkit', 'virus', 'malware', 'spyware',
+            'crack', 'keygen', 'hack', 'exploit', 'payload', 'inject', 'dump',
+            'stealer', 'rat', 'botnet', 'worm', 'adware', 'dropper', 'loader'
+        ]
+        
+        # Legitimate software paths to whitelist
+        self.safe_paths = [
+            'microsoft', 'google', 'mozilla', 'adobe', 'oracle', 'java',
+            'python', 'nodejs', 'npm', 'git', 'vscode', 'visual studio',
+            'intellij', 'jetbrains', 'slack', 'discord', 'zoom', 'teams',
+            'chrome', 'firefox', 'edge', 'opera', 'brave',
+            'steam', 'epic games', 'nvidia', 'amd', 'intel',
+            'windows defender', 'kaspersky', 'norton', 'avast', 'malwarebytes',
+            'program files', 'program files (x86)', 'windows\\system32',
+        ]
+        
+        # Ransomware extension patterns
+        self.ransomware_extensions = {
+            '.encrypted', '.locked', '.crypto', '.crypt', '.enc', '.encoded',
+            '.locky', '.cerber', '.zepto', '.odin', '.thor', '.zzzzz',
+            '.micro', '.mp3', '.vvv', '.ccc', '.xyz', '.aaa', '.abc',
+            '.exx', '.ezz', '.ecc', '.xxx', '.ttt', '.qqq', '.crinf',
+            '.r5a', '.XRNT', '.XTBL', '.LOL!', '.fun', '.gws', '.btc',
+        }
+    
+    def calculate_file_hash(self, filepath):
+        """Calculate SHA256 hash of file"""
+        try:
+            sha256 = hashlib.sha256()
+            with open(filepath, 'rb') as f:
+                for chunk in iter(lambda: f.read(4096), b''):
+                    sha256.update(chunk)
+            return sha256.hexdigest()
+        except Exception as e:
+            return None
+            
+    def get_critical_directories(self):
+        """Get directories to monitor - EXPANDED"""
+        dirs = []
+        
+        if platform.system() == 'Windows':
+            user_profile = os.environ.get('USERPROFILE', 'C:\\Users\\Default')
+            dirs = [
+                os.path.join(user_profile, 'Downloads'),
+                os.path.join(user_profile, 'Documents'),
+                os.path.join(user_profile, 'Desktop'),
+                os.path.join(user_profile, 'AppData', 'Local', 'Temp'),
+                os.path.join(user_profile, 'AppData', 'Roaming'),
+                os.path.join(user_profile, 'AppData', 'Local'),
+                'C:\\Windows\\Temp',
+                'C:\\ProgramData',
+                'C:\\Users\\Public',
+            ]
+        else:
+            home = os.path.expanduser('~')
+            dirs = [
+                os.path.join(home, 'Downloads'),
+                os.path.join(home, 'Documents'),
+                os.path.join(home, 'Desktop'),
+                '/tmp', '/var/tmp',
+                '/dev/shm',  # RAM disk often used by malware
+                os.path.join(home, '.local/share'),
+                os.path.join(home, '.config'),
+            ]
+        
+        return [d for d in dirs if os.path.exists(d)]
+    
+    def collect(self):
+        """Collect filesystem changes with ML-DRIVEN threat detection"""
+        fs_data = []
+        current_time = time.time()
+        new_file_count = 0
+        
+        recent_exec_count = 0
+        recent_script_count = 0
+        reported_count = 0  # –… ADD: Track reported files
+        
+        try:
+            for directory in self.watched_directories:
+                try:
+                    for root, dirs, files in os.walk(directory):
+                        depth = root[len(directory):].count(os.sep)
+                        if depth > 4:
+                            dirs[:] = []
+                            continue
+                        
+                        root_lower = root.lower()
+                        if any(skip in root_lower for skip in ['windows\\winsxs', 'windows\\assembly', 
+                                                            '.git', 'node_modules', '__pycache__',
+                                                            'windows\\temp\\chocolatey', 'programdata\\microsoft']):
+                            dirs[:] = []
+                            continue
+                        
+                        for filename in files:
+                            filepath = os.path.join(root, filename)
+                            
+                            try:
+                                stat = os.stat(filepath)
+                                mtime = stat.st_mtime
+                                ctime = stat.st_ctime
+                                file_ext = os.path.splitext(filename)[1].lower()
+                                filename_lower = filename.lower()
+                                
+                                is_new = filepath not in self.last_scan
+                                is_modified = not is_new and self.last_scan.get(filepath, 0) != mtime
+                                time_since_modify = current_time - mtime
+                                time_since_create = current_time - ctime
+                                
+                                if file_ext in ['.exe', '.dll', '.sys']:
+                                    recent_exec_count += 1
+                                if file_ext in ['.ps1', '.bat', '.cmd', '.vbs', '.js']:
+                                    recent_script_count += 1
+                                
+                                # –… FIX: More liberal analysis criteria
+                                should_analyze = (
+                                    time_since_modify < COLLECTION_INTERVAL + 300 or
+                                    time_since_create < COLLECTION_INTERVAL + 300 or
+                                    is_new or is_modified or
+                                    (file_ext in self.high_risk_extensions and time_since_create < 86400) or
+                                    reported_count < 20  # –… Report first 20 files regardless
+                                )
+                                
+                                if not should_analyze:
+                                    self.last_scan[filepath] = mtime
+                                    continue
+                                
+                                if is_new:
+                                    new_file_count += 1
+                                    self.file_creation_rate.append(current_time)
+                                
+                                # –… Build feature vector
+                                feature_vector = np.array([
+                                    1.0 if is_new else 0.0,
+                                    float(time_since_create) / 3600.0 if time_since_create < 3600 else 1.0,
+                                    3.0 if file_ext in self.high_risk_extensions else 0.0,  # ✅ CHANGED from 1.0 to 3.0
+                                    5.0 if file_ext in self.ransomware_extensions else 0.0,  # ✅ CHANGED from 1.0 to 5.0
+                                    float(len([p for p in self.suspicious_patterns if p in filename_lower])) * 2.0,  # ✅ CHANGED: multiply by 2
+                                    2.0 if 'temp' in filepath.lower() else 0.0,  # ✅ CHANGED from 1.0 to 2.0
+                                    1.5 if any(x in filepath.lower() for x in ['downloads', 'desktop']) else 0.0,  # ✅ CHANGED from 1.0 to 1.5
+                                    float(stat.st_size) / 10e6 if stat.st_size < 10e6 else 1.0,
+                                    3.0 if stat.st_size < 10 * 1024 and file_ext == '.exe' else 0.0,  # ✅ CHANGED from 1.0 to 3.0
+                                    2.0 if filename.count('.') > 1 else 0.0,  # ✅ CHANGED from 1.0 to 2.0
+                                    float(new_file_count) / 50.0,
+                                    float(recent_exec_count) / max(len(files), 1),
+                                    float(recent_script_count) / max(len(files), 1),
+                                    1.0 if not any(safe in filepath.lower() for safe in self.safe_paths) else 0.0
+                                ])
+                                
+                                feature_names = [
+                                    'new_file', 'file_age', 'high_risk_ext', 'ransomware_ext',
+                                    'suspicious_patterns', 'temp_location', 'user_location',
+                                    'file_size', 'tiny_executable', 'double_extension',
+                                    'creation_rate', 'executable_ratio', 'script_ratio', 'unsafe_path'
+                                ]
+                                
+                                # –… Run ML ensemble
+                                ml_is_anomaly = False
+                                ml_risk_score = 0.0
+                                ml_indicators = []
+                                
+                                if (self.anomaly_detector.isolation_forest is not None or 
+                                    (self.anomaly_detector.autoencoder and self.anomaly_detector.autoencoder.is_trained)):
+                                    
+                                    try:
+                                        is_anomaly, anomaly_info = self.anomaly_detector.detect_anomaly_ensemble(
+                                            feature_vector,
+                                            feature_names
+                                        )
+                                        
+                                        if is_anomaly:
+                                            ml_is_anomaly = True
+                                            severity_map = {'high': 9.0, 'medium': 6.5, 'low': 4.5}
+                                            ml_risk_score = severity_map.get(anomaly_info['severity'], 5.0)
+                                            ml_indicators = [f"ml_{ind}" for ind in anomaly_info.get('contributing_features', [])[:3]]
+                                    
+                                    except Exception as e:
+                                        print(f"  [ML] File detection error: {e}")
+                                
+                                # –… RULE-BASED (MINIMAL - only truly dangerous patterns)
+                                rule_risk_score = 0.0
+                                rule_indicators = []
+                                
+                                # Only flag ransomware extensions (not regular .exe)
+                                if file_ext in self.ransomware_extensions and file_ext != '.enc':
+                                    rule_risk_score += 8.0
+                                    rule_indicators.append(f'ransomware_ext:{file_ext}')
+                                
+                                # Double extension tricks
+                                for trick in self.double_extension_tricks:
+                                    if filename_lower.endswith(trick):
+                                        rule_risk_score += 7.0
+                                        rule_indicators.append(f'double_ext:{trick}')
+                                        break
+                                
+                                # Known malware patterns
+                                malware_keywords = ['mimikatz', 'keylog', 'ransom', 'cryptolocker']
+                                if any(kw in filename_lower for kw in malware_keywords):
+                                    rule_risk_score += 6.0
+                                    rule_indicators.append('malware_keyword')
+                                
+                                # –… FIX: MORE LIBERAL REPORTING
+                                should_report = False
+                                
+                                if ml_is_anomaly:
+                                    final_risk_score = max(ml_risk_score, rule_risk_score)
+                                    threat_indicators = ml_indicators + rule_indicators[:1]
+                                    detection_method = 'ml'
+                                    should_report = True
+                                elif rule_risk_score > 6.0:
+                                    final_risk_score = rule_risk_score
+                                    threat_indicators = rule_indicators
+                                    detection_method = 'rule'
+                                    should_report = True
+                                elif is_new or time_since_create < 600:  # New files in last 10 min
+                                    final_risk_score = 2.0
+                                    threat_indicators = ['recent_file_activity']
+                                    detection_method = 'baseline'
+                                    should_report = True
+                                elif reported_count < 20:  # –… FIX: Report first 20 files
+                                    final_risk_score = 1.0
+                                    threat_indicators = ['sampled_file']
+                                    detection_method = 'baseline'
+                                    should_report = True
+                                    reported_count += 1
+                                
+                                # –… FIX: Only skip if in safe path AND no ML detection AND low risk
+                                if (any(safe in filepath.lower() for safe in self.safe_paths) and 
+                                    not ml_is_anomaly and 
+                                    rule_risk_score < 6.0):
+                                    should_report = False
+                                
+                                if should_report:
+                                    file_hash = None
+                                    if stat.st_size < 50*1024*1024 and final_risk_score > 5.0:
+                                        file_hash = self.calculate_file_hash(filepath)
+                                        if file_hash:
+                                            if file_hash in self.known_hashes:
+                                                final_risk_score = max(0, final_risk_score - 1.0)
+                                            else:
+                                                self.known_hashes.add(file_hash)
+                                    
+                                    record = {
+                                        'event_type': 'created' if is_new else ('modified' if is_modified else 'existing'),
+                                        'file_path': filepath,
+                                        'file_name': filename,
+                                        'file_extension': file_ext,
+                                        'file_size': stat.st_size,
+                                        'file_hash': file_hash,
+                                        'modification_time': datetime.fromtimestamp(mtime),
+                                        'creation_time': datetime.fromtimestamp(ctime),
+                                        'directory': directory,
+                                        'is_suspicious': True,
+                                        'risk_score': final_risk_score,
+                                        'threat_indicators': threat_indicators,
+                                        'detection_method': detection_method
+                                    }
+                                    fs_data.append(record)
+                                    self.file_event_count += 1
+                                
+                                self.last_scan[filepath] = mtime
+                            
+                            except (OSError, PermissionError):
+                                continue
+                
+                except (OSError, PermissionError):
+                    continue
+            
+            # Check for rapid file creation
+            recent_creations = sum(1 for t in self.file_creation_rate if current_time - t < 60)
+            if recent_creations > 20:
+                for record in fs_data:
+                    if record['event_type'] == 'created':
+                        record['risk_score'] = min(10.0, record['risk_score'] + 2.0)
+                        record['threat_indicators'].append('rapid_file_creation')
+            
+            self.anomaly_detector.update_baseline('file', 'events', self.file_event_count)
+            fs_data.sort(key=lambda x: x['risk_score'], reverse=True)
+        
+        except Exception as e:
+            print(f"Filesystem collection error: {e}")
+        
+        print(f"  [FILESYSTEM] Collected: {len(fs_data)} files, {reported_count} sampled")
+        
+        return fs_data[:50]
+    
+    def _is_potentially_suspicious(self, filename_lower, file_ext, filepath):
+        """Quick check if file warrants deeper analysis"""
+        # High-risk extensions always analyzed
+        if file_ext in self.high_risk_extensions:
+            return True
+        
+        # Ransomware extensions
+        if file_ext in self.ransomware_extensions:
+            return True
+        
+        # Suspicious patterns in name
+        if any(pattern in filename_lower for pattern in self.suspicious_patterns[:10]):
+            return True
+        
+        # Hidden files in user directories
+        if filename_lower.startswith('.') and 'appdata' not in filepath.lower():
+            return True
+        
+        return False
+
+    def _calculate_comprehensive_file_risk(self, filename, filename_lower, file_ext, 
+                                    filepath, file_size, is_new, time_since_create):
+        """Calculate comprehensive file risk - ENHANCED DETECTION"""
+        risk = 0.0
+        indicators = []
+        filepath_lower = filepath.lower()
+
+        # ✅ WHITELIST CHECK (safe paths get 0 risk unless ransomware)
+        if any(safe in filepath_lower for safe in self.safe_paths):
+            if file_ext in self.ransomware_extensions and file_ext != '.enc':
+                risk = 8.0
+                indicators.append(f'ransomware_extension_safe_location:{file_ext}')
+                return 8.0, indicators
+            
+            if file_ext == '.enc':
+                return 0.5, ['encrypted_file_safe_location']
+            
+            return 0.0, ['safe_location']
+
+        # ✅ ENHANCED: More aggressive malware keyword detection
+        malware_keywords_critical = [
+            'mimikatz', 'keylog', 'ransom', 'cryptolocker', 'wannacry',
+            'petya', 'locky', 'cerber', 'trojan', 'backdoor', 'rootkit',
+            'virus', 'worm', 'spyware', 'stealer', 'rat', 'botnet'
+        ]
+        
+        malware_keywords_high = [
+            'crack', 'keygen', 'patch', 'loader', 'activator',
+            'hack', 'exploit', 'payload', 'inject', 'dump',
+            'pwdump', 'gsecdump', 'wce', 'lazagne'
+        ]
+
+        # ✅ CRITICAL MALWARE KEYWORDS (instant high risk)
+        for keyword in malware_keywords_critical:
+            if keyword in filename_lower:
+                risk += 9.0
+                indicators.append(f'critical_malware_keyword:{keyword}')
+                break
+
+        # ✅ HIGH RISK KEYWORDS
+        for keyword in malware_keywords_high:
+            if keyword in filename_lower:
+                risk += 7.0
+                indicators.append(f'high_risk_keyword:{keyword}')
+                break
+
+        # ✅ EXTENSION-BASED RISK
+        if file_ext in self.high_risk_extensions:
+            risk += 4.0  # Increased from 3.0
+            indicators.append(f'high_risk_extension:{file_ext}')
+
+        # ✅ RANSOMWARE EXTENSIONS
+        if file_ext in self.ransomware_extensions:
+            if file_ext == '.enc':
+                if any(x in filepath_lower for x in ['downloads', 'desktop', 'documents']):
+                    risk += 7.0
+                    indicators.append(f'enc_file_user_directory:{file_ext}')
+                elif is_new and time_since_create < 60:
+                    risk += 5.0
+                    indicators.append(f'recent_enc_file:{file_ext}')
+            else:
+                risk += 9.0  # Increased from 8.0
+                indicators.append(f'ransomware_extension:{file_ext}')
+
+        # ✅ DOUBLE EXTENSION TRICKS (always high risk)
+        for trick in self.double_extension_tricks:
+            if filename_lower.endswith(trick):
+                risk += 8.0
+                indicators.append(f'double_extension_trick:{trick}')
+                break
+
+        # Generic hidden executable
+        if filename.count('.') > 1:
+            parts = filename.rsplit('.', 2)
+            if len(parts) == 3:
+                if parts[1].lower() in ['pdf','doc','docx','xls','xlsx','jpg','png','txt'] and \
+                parts[2].lower() in ['exe','scr','bat','cmd','vbs','js']:
+                    risk += 7.0
+                    indicators.append('hidden_executable_extension')
+
+        # ✅ SUSPICIOUS FILENAME PATTERNS
+        pattern_matches = [p for p in self.suspicious_patterns if p in filename_lower]
+        
+        if len(pattern_matches) >= 2:  # Lowered from 3
+            risk += 8.0  # Increased from 7.0
+            indicators.append(f'multiple_suspicious_keywords:{",".join(pattern_matches[:3])}')
+        elif len(pattern_matches) == 1:
+            risk += 5.0  # Increased from 2.0
+            indicators.append(f'suspicious_keyword:{pattern_matches[0]}')
+
+        # ✅ LOCATION-BASED RISK
+        if 'temp' in filepath_lower or 'tmp' in filepath_lower:
+            if file_ext in self.high_risk_extensions:
+                risk += 4.0  # Increased from 3.0
+                indicators.append('executable_in_temp')
+            elif file_ext in ['.ps1','.bat','.cmd','.vbs']:
+                risk += 5.0  # Increased from 4.0
+                indicators.append('script_in_temp')
+
+        if 'download' in filepath_lower and file_ext in self.high_risk_extensions and is_new:
+            risk += 3.0  # Increased from 1.5
+            indicators.append('new_executable_in_downloads')
+
+        if any(x in filepath_lower for x in ['startup','autostart']):
+            risk += 6.0  # Increased from 5.0
+            indicators.append('persistence:startup_folder')
+
+        if '$recycle.bin' in filepath_lower and file_ext in self.high_risk_extensions:
+            risk += 7.0  # Increased from 6.0
+            indicators.append('executable_in_recycle_bin')
+
+        if ('windows\\system32' in filepath_lower or 'windows\\syswow64' in filepath_lower) and \
+            file_ext in ['.exe','.dll'] and is_new:
+            risk += 5.0  # Increased from 4.0
+            indicators.append('new_file_in_system32')
+
+        # ✅ SIZE ANOMALIES
+        if file_ext in ['.exe','.dll']:
+            if file_size < 10 * 1024:
+                risk += 3.0  # Increased from 2.0
+                indicators.append('tiny_executable')
+            elif file_size > 500 * 1024 * 1024:
+                risk += 2.0  # Increased from 1.0
+                indicators.append('unusually_large_executable')
+
+        # ✅ TIMING-BASED RISK
+        if is_new and time_since_create < 10 and file_ext in self.high_risk_extensions:
+            risk += 2.0  # Increased from 1.5
+            indicators.append('very_recent_executable')
+
+        # ✅ HIDDEN FILES
+        if filename_lower.startswith('.') and platform.system() != 'Windows':
+            if file_ext in self.high_risk_extensions:
+                risk += 3.0  # Increased from 2.0
+                indicators.append('hidden_executable')
+
+        # Windows hidden/system attribute
+        try:
+            if platform.system() == 'Windows':
+                import ctypes
+                attrs = ctypes.windll.kernel32.GetFileAttributesW(filepath)
+                if attrs != -1:
+                    if attrs & 0x2 and file_ext in self.high_risk_extensions:
+                        risk += 3.0  # Increased from 2.0
+                        indicators.append('hidden_attribute_executable')
+                    if attrs & 0x4 and is_new:
+                        risk += 4.0  # Increased from 3.0
+                        indicators.append('new_system_attribute_file')
+        except:
+            pass
+
+        return min(risk, 10.0), indicators
+
+class UserActivityCollector:
+    """Collect user activity events with anomaly detection - ENHANCED"""
+    
+    def __init__(self, anomaly_detector):
+        self.known_sessions = {}  # Track {session_key: metadata}
+        self.failed_login_count = defaultdict(int)
+        self.last_collection = None
+        self.anomaly_detector = anomaly_detector
+        
+        # User behavior baseline
+        self.user_login_times = defaultdict(list)  # {username: [login_times]}
+        self.user_source_ips = defaultdict(set)    # {username: {known_ips}}
+        
+        # Suspicious patterns
+        self.brute_force_threshold = 5  # Failed logins in short time
+        self.concurrent_session_threshold = 3
+        
+    def collect(self):
+        """Collect user activity with ML-DRIVEN anomaly detection"""
+        user_data = []
+        current_time = datetime.now()
+        
+        remote_login_count = 0
+        privilege_count = 0
+        
+        try:
+            current_users = psutil.users()
+            current_session_keys = set()
+            concurrent_sessions = defaultdict(int)
+            
+            for user in current_users:
+                concurrent_sessions[user.name] += 1
+            
+            for user in current_users:
+                session_key = f"{user.name}:{user.terminal or 'console'}:{user.host or 'local'}"
+                current_session_keys.add(session_key)
+                
+                # Only report NEW sessions
+                if session_key not in self.known_sessions:
+                    login_time = datetime.fromtimestamp(user.started) if user.started else current_time
+                    
+                    is_privileged = self._is_privileged_user(user.name)
+                    if is_privileged:
+                        privilege_count += 1
+                    
+                    if user.host and user.host not in ['local', 'localhost', '127.0.0.1']:
+                        remote_login_count += 1
+                    
+                    hour = login_time.hour
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ BUILD ML FEATURE VECTOR
+                    # ═══════════════════════════════════════════════════════
+                    feature_vector = np.array([
+                        1.0 if is_privileged else 0.0,
+                        1.0 if user.host and user.host not in ['local', 'localhost', '127.0.0.1'] else 0.0,
+                        float(concurrent_sessions[user.name]) / 5.0,
+                        1.0 if hour < 6 or hour > 22 else 0.0,
+                        float(hour) / 24.0,
+                        1.0 if user.host and user.host in self.user_source_ips.get(user.name, set()) else 0.0,
+                        float(len(self.user_login_times.get(user.name, []))) / 20.0,
+                        float(remote_login_count) / max(len(current_users), 1),
+                        float(privilege_count) / max(len(current_users), 1),
+                        float(len(current_users)) / 10.0,
+                        1.0 if len(self.user_login_times.get(user.name, [])) > 0 else 0.0,
+                        float(datetime.now().weekday()) / 7.0
+                    ])
+                    
+                    feature_names = [
+                        'privileged_account', 'remote_login', 'concurrent_sessions',
+                        'off_hours', 'hour_of_day', 'known_ip', 'login_frequency',
+                        'remote_login_ratio', 'privilege_ratio', 'total_users',
+                        'has_history', 'day_of_week'
+                    ]
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ STEP 1: ML ENSEMBLE DETECTION (PRIMARY)
+                    # ═══════════════════════════════════════════════════════
+                    ml_is_anomaly = False
+                    ml_risk_score = 0.0
+                    ml_indicators = []
+                    
+                    if (self.anomaly_detector.isolation_forest is not None or 
+                        (self.anomaly_detector.autoencoder and self.anomaly_detector.autoencoder.is_trained)):
+                        
+                        try:
+                            is_anomaly, anomaly_info = self.anomaly_detector.detect_anomaly_ensemble(
+                                feature_vector,
+                                feature_names
+                            )
+                            
+                            if is_anomaly:
+                                ml_is_anomaly = True
+                                severity_map = {'high': 9.0, 'medium': 6.5, 'low': 4.5}
+                                ml_risk_score = severity_map.get(anomaly_info['severity'], 5.0)
+                                ml_indicators = [f"ml_{ind}" for ind in anomaly_info.get('contributing_features', [])[:3]]
+                        
+                        except Exception as e:
+                            print(f"  [ML] User activity detection error: {e}")
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ STEP 2: RULE-BASED (ONLY IF ML DIDN'T DETECT)
+                    # ═══════════════════════════════════════════════════════
+                    rule_risk_score = 0.0
+                    rule_indicators = []
+                    
+                    if not ml_is_anomaly:  # ✅ Only evaluate rules if ML didn't flag
+                        # Rule 1: Impossible travel (new IP within 1 hour)
+                        if user.host and user.host not in ['local', 'localhost', '127.0.0.1']:
+                            if user.name in self.user_source_ips:
+                                if user.host not in self.user_source_ips[user.name]:
+                                    recent_logins = [t for t in self.user_login_times.get(user.name, []) 
+                                                if (login_time - t).total_seconds() < 3600]
+                                    if len(recent_logins) > 0:
+                                        rule_risk_score += 7.0
+                                        rule_indicators.append('impossible_travel')
+                            
+                            self.user_source_ips.setdefault(user.name, set()).add(user.host)
+                        
+                        # Rule 2: Privileged + Remote + Off-hours
+                        if is_privileged and user.host not in ['local', 'localhost', '127.0.0.1']:
+                            if hour < 6 or hour > 22:
+                                rule_risk_score += 6.0
+                                rule_indicators.append('privileged_remote_offhours')
+                        
+                        # Rule 3: Very high concurrent sessions
+                        if concurrent_sessions[user.name] >= 5:
+                            rule_risk_score += 5.0
+                            rule_indicators.append(f'excessive_concurrent_sessions:{concurrent_sessions[user.name]}')
+                        
+                        # Rule 4: Brute force detection (check failed login history)
+                        failed_count = self.failed_login_count.get(user.host or 'local', 0)
+                        if failed_count >= self.brute_force_threshold:
+                            rule_risk_score += 7.0
+                            rule_indicators.append(f'brute_force_detected:{failed_count}')
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ STEP 3: COMBINE DETECTIONS (ML PRIORITY)
+                    # ═══════════════════════════════════════════════════════
+                    final_risk_score = 0.0
+                    detection_method = 'baseline'
+                    threat_indicators = []
+                    
+                    if ml_is_anomaly:
+                        # ML detected anomaly - HIGHEST PRIORITY
+                        final_risk_score = ml_risk_score
+                        threat_indicators = ml_indicators
+                        detection_method = 'ml'
+                        
+                    elif rule_risk_score > 5.0:
+                        # Rule-based detection - MEDIUM PRIORITY
+                        final_risk_score = rule_risk_score
+                        threat_indicators = rule_indicators
+                        detection_method = 'rule'
+                        
+                    else:
+                        # Baseline monitoring - LOW PRIORITY
+                        if is_privileged or remote_login_count > 0:
+                            final_risk_score = 2.0
+                            threat_indicators = ['monitored_session']
+                            detection_method = 'baseline'
+                        else:
+                            final_risk_score = 1.0
+                            threat_indicators = []
+                            detection_method = 'baseline'
+                    
+                    # Track login times
+                    self.user_login_times.setdefault(user.name, []).append(login_time)
+                    if len(self.user_login_times[user.name]) > 20:
+                        self.user_login_times[user.name] = self.user_login_times[user.name][-20:]
+                    
+                    # Store session
+                    self.known_sessions[session_key] = {
+                        'first_seen': current_time,
+                        'username': user.name,
+                        'source_ip': user.host or 'local'
+                    }
+                    
+                    # ═══════════════════════════════════════════════════════
+                    # ✅ REPORT EVENT
+                    # ═══════════════════════════════════════════════════════
+                    record = {
+                        'event_type': 'login',
+                        'username': user.name,
+                        'session_id': str(user.terminal) if user.terminal else 'console',
+                        'source_ip': user.host if user.host else 'local',
+                        'login_success': True,
+                        'privilege_escalation': is_privileged,
+                        'risk_score': final_risk_score,
+                        'threat_indicators': threat_indicators,
+                        'login_time': login_time.isoformat(),
+                        'concurrent_sessions': concurrent_sessions[user.name],
+                        'detection_method': detection_method
+                    }
+                    
+                    user_data.append(record)
+                    
+                    if ml_is_anomaly or rule_risk_score > 5.0:
+                        print(f"  [USER] Anomalous session: {user.name} from {user.host or 'local'} "
+                            f"(risk={final_risk_score:.1f}, method={detection_method})")
+            
+            # Detect LOGOUTS
+            for session_key in list(self.known_sessions.keys()):
+                if session_key not in current_session_keys:
+                    session_meta = self.known_sessions[session_key]
+                    username = session_meta['username']
+                    
+                    user_data.append({
+                        'event_type': 'logout',
+                        'username': username,
+                        'session_id': session_key.split(':')[1],
+                        'source_ip': session_meta['source_ip'],
+                        'login_success': True,
+                        'privilege_escalation': False,
+                        'risk_score': 0.0,
+                        'threat_indicators': [],
+                        'session_duration': (current_time - session_meta['first_seen']).total_seconds(),
+                        'detection_method': 'none'
+                    })
+                    del self.known_sessions[session_key]
+            
+            self.last_collection = current_time
+        
+        except Exception as e:
+            print(f"User activity collection error: {e}")
+        
+        return user_data
+    
+    def _is_privileged_user(self, username):
+        """Check if user has elevated privileges"""
+        username_lower = username.lower()
+        return username_lower in ['root', 'administrator', 'admin', 'system', 'sudo']
+    
+    def _calculate_user_risk(self, username, source_ip, login_time, concurrent_count):
+        """Calculate risk score for user activity"""
+        risk = 0.0
+        indicators = []
+        
+        # Privileged users
+        if self._is_privileged_user(username):
+            risk += 2.0
+            indicators.append('privileged_account')
+        
+        # Remote access (non-local)
+        if source_ip and source_ip not in ['local', 'localhost', '127.0.0.1', '::1', '']:
+            risk += 2.0
+            indicators.append('remote_login')
+            
+            # Check if new source IP for this user
+            if username in self.user_source_ips:
+                if source_ip not in self.user_source_ips[username]:
+                    risk += 2.0
+                    indicators.append('new_source_ip')
+                    self.user_source_ips[username].add(source_ip)
+            else:
+                self.user_source_ips[username] = {source_ip}
+        
+        # Multiple concurrent sessions
+        if concurrent_count >= self.concurrent_session_threshold:
+            risk += 3.0
+            indicators.append(f'multiple_sessions:{concurrent_count}')
+        
+        # Off-hours login (outside 6 AM - 10 PM)
+        hour = login_time.hour
+        if hour < 6 or hour > 22:
+            risk += 1.5
+            indicators.append(f'off_hours_login:{hour}h')
+        
+        return min(risk, 10.0), indicators
+    
+    def _detect_login_anomaly(self, username, source_ip, login_time):
+        """Detect anomalous login patterns"""
+        # Track login times for this user
+        if username not in self.user_login_times:
+            self.user_login_times[username] = []
+        
+        self.user_login_times[username].append(login_time)
+        
+        # Keep only last 20 logins
+        if len(self.user_login_times[username]) > 20:
+            self.user_login_times[username] = self.user_login_times[username][-20:]
+        
+        # Check for rapid successive logins (< 5 minutes apart)
+        if len(self.user_login_times[username]) > 1:
+            last_login = self.user_login_times[username][-2]
+            time_diff = (login_time - last_login).total_seconds()
+            
+            if time_diff < 300:  # < 5 minutes
+                return True
+        
+        # Check for unusual hour (statistical anomaly)
+        hour = login_time.hour
+        if len(self.user_login_times[username]) >= 5:
+            # Calculate typical login hours
+            typical_hours = [lt.hour for lt in self.user_login_times[username][:-1]]
+            avg_hour = sum(typical_hours) / len(typical_hours)
+            
+            # If this login is > 6 hours different from typical
+            if abs(hour - avg_hour) > 6:
+                return True
+        
+        return False
+
+class ClientAgent:
+    """Main client agent with complete federated learning implementation"""
+        
+    def __init__(self):
+        global CLIENT_ID
+        CLIENT_ID = SystemInfo.get_client_id()
+        
+        self.running = False
+        
+        # ✅ CRITICAL FIX: Create feature manager FIRST
+        self.feature_manager = FeatureWindowManager(window_duration=60, max_windows=1000)
+        
+        # ✅ CRITICAL FIX: Create anomaly detector SECOND
+        self.anomaly_detector = EnhancedAnomalyDetector(use_ocsvm=False)
+        
+        # ✅ CRITICAL FIX: Link feature manager to anomaly detector
+        self.anomaly_detector.feature_manager = self.feature_manager
+        
+        # ✅ CRITICAL FIX: Create collectors THIRD with both dependencies
+        self.collectors = {
+            'network': EnhancedNetworkCollector(self.anomaly_detector),
+            'process': EnhancedProcessCollector(self.anomaly_detector),
+            'filesystem': EnhancedFilesystemCollector(self.anomaly_detector),
+            'user': UserActivityCollector(self.anomaly_detector)
+        }
+        
+        # ✅ CRITICAL FIX: Link feature_manager to ALL collectors
+        for collector_name, collector in self.collectors.items():
+            collector.feature_manager = self.feature_manager
+            print(f"  ✓ Linked feature_manager to {collector_name} collector")
+        
+        # Rest of __init__ remains the same...
+        self.anomaly_alerts = deque(maxlen=100)
+        self.models_fetched_from_server = False
+        self.last_global_model = None
+        
+        self.fl_upload_callback = None  # Will be set by GUI
+        
+        print(f"FortifAI Client Agent (Enhanced with Full ML Pipeline)")
+        print(f"Client ID: {CLIENT_ID}")
+        print(f"Hostname: {socket.gethostname()}")
+        print(f"OS: {platform.system()} {platform.version()}")
+        print(f"Server: {SERVER_HOST}:{SERVER_PORT}")
+        print(f"Federated Learning: {'Enabled' if ENABLE_FL else 'Disabled'}")
+        print(f"ML Models: IsolationForest + Autoencoder + Z-Score")
+        print("-" * 50)
+    
+    def load_models_from_server(self, cached_models):
+        """Load previously trained models from server cache"""
+        try:
+            print("\n[MODEL CACHE] Loading models from server...")
+            
+            models_loaded = False
+            
+            # Load Isolation Forest
+            if 'isolation_forest' in cached_models and cached_models['isolation_forest']:
+                try:
+                    # Server sends the pickled model as bytes
+                    iso_forest_bytes = cached_models['isolation_forest']
+                    self.anomaly_detector.isolation_forest = pickle.loads(iso_forest_bytes)
+                    print("  ✓ Isolation Forest restored from cache")
+                    models_loaded = True
+                except Exception as e:
+                    print(f"  ✗ Failed to load Isolation Forest: {e}")
+                    if self.anomaly_detector.autoencoder:
+                        self.anomaly_detector.autoencoder.is_trained = False
+                        
+            # Load Autoencoder weights
+            if 'autoencoder_config' in cached_models and cached_models['autoencoder_config']:
+                try:
+                    ae_config = cached_models['autoencoder_config']
+                    
+                    # Build autoencoder if needed
+                    if self.anomaly_detector.autoencoder is None:
+                        input_dim = ae_config.get('input_dim', 14)
+                        self.anomaly_detector.autoencoder = AutoencoderAnomalyDetector(input_dim=input_dim)
+                    
+                    # Restore weights
+                    if 'weights' in ae_config:
+                        self.anomaly_detector.autoencoder.set_weights(ae_config['weights'])
+                    
+                    # Restore scaler
+                    if 'scaler_mean' in ae_config and 'scaler_scale' in ae_config:
+                        self.anomaly_detector.autoencoder.scaler.mean_ = np.array(ae_config['scaler_mean'])
+                        self.anomaly_detector.autoencoder.scaler.scale_ = np.array(ae_config['scaler_scale'])
+                        self.anomaly_detector.autoencoder.is_trained = True
+                    
+                    # Restore threshold
+                    if 'threshold' in ae_config:
+                        self.anomaly_detector.ae_threshold = ae_config['threshold']
+                    
+                    print("  – Autoencoder restored from cache")
+                    models_loaded = True
+                except Exception as e:
+                    print(f"  ✗ Failed to load Autoencoder: {e}")
+            
+            # Restore last training time
+            if 'last_training_time' in cached_models:
+                self.anomaly_detector.last_training_time = cached_models['last_training_time']
+            
+            # Restore feature buffer (optional, for continuity)
+            if 'feature_buffer' in cached_models and cached_models['feature_buffer']:
+                try:
+                    # Restore last 50 windows
+                    for feature in cached_models['feature_buffer'][-50:]:
+                        self.feature_manager.feature_buffer.append(feature)
+                    print(f"  – Restored {len(cached_models['feature_buffer'][-50:])} feature windows")
+                except Exception as e:
+                    print(f"  ⚠️  Could not restore feature buffer: {e}")
+            
+            if models_loaded:
+                iso_ok = self.anomaly_detector.isolation_forest is not None
+                ae_ok = (self.anomaly_detector.autoencoder and 
+                        self.anomaly_detector.autoencoder.is_trained)
+                
+                if not (iso_ok or ae_ok):
+                    print("[MODEL CACHE] ⚠️  Models loaded but verification failed")
+                    return False
+                
+                print(f"[MODEL CACHE] – Verified: ISO={iso_ok}, AE={ae_ok}")
+                print("[MODEL CACHE] – Models successfully loaded from server")
+                if hasattr(self, 'gui') and self.gui:
+                    self.gui.add_log("– Pre-trained models loaded from server cache")
+                return True
+            else:
+                print("[MODEL CACHE] ⓘ No cached models available")
+                return False
+                
+        except Exception as e:
+            print(f"[MODEL CACHE] ✗ Error loading models: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def register_with_server(self):
+        """Register client with server and fetch any cached models"""
+        try:
+            client_info = SystemInfo.get_system_info()
+            
+            data = {
+                'type': 'registration',
+                'client_info': client_info,
+                'capabilities': {
+                    'federated_learning': ENABLE_FL,
+                    'anomaly_detection': True
+                },
+                'request_cached_models': True
+            }
+            
+            response = self.send_to_server(data)
+            if response and response.get('status') == 'registered':
+                print("– Successfully registered with server")
+                
+                # –… CHECK: Did server send cached models?
+                if 'cached_models' in response and response['cached_models']:
+                    models_loaded = self.load_models_from_server(response['cached_models'])
+                    
+                    # –… IMPROVED: Immediate verification
+                    if models_loaded:
+                        iso_ok = self.anomaly_detector.isolation_forest is not None
+                        ae_ok = (self.anomaly_detector.autoencoder and 
+                                self.anomaly_detector.autoencoder.is_trained)
+                        
+                        if iso_ok or ae_ok:
+                            self.models_fetched_from_server = True
+                            print(f"[CACHE] – Models verified: ISO={iso_ok}, AE={ae_ok}")
+                        else:
+                            self.models_fetched_from_server = False
+                            print(f"[CACHE] ✗ Models loaded but verification failed")
+                    else:
+                        self.models_fetched_from_server = False
+                        print("[CACHE] ✗ No usable cached models")
+                else:
+                    print("[CACHE] ✗ No cached models available on server")
+                    self.models_fetched_from_server = False
+                
+                # Receive initial global model if available
+                if 'model_weights' in response:
+                    self.anomaly_detector.update_model_parameters(response['model_weights'])
+                
+                return True
+            else:
+                print("✗ Registration failed")
+                return False
+        
+        except Exception as e:
+            print(f"✗ Registration error: {e}")
+            return False
+
+    
+    def send_to_server(self, data):
+        """Send data to server - FIXED FOR LARGE RESPONSES"""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(10)
+            sock.connect((SERVER_HOST, SERVER_PORT))
+            
+            # Serialize data
+            serialized = pickle.dumps(data)
+            data_size = len(serialized)
+            
+            # Send size first
+            sock.send(data_size.to_bytes(8, 'big'))
+            
+            # Send data
+            sock.sendall(serialized)
+            
+            # –… FIX: Receive response size first
+            response_size_data = sock.recv(8)
+            if len(response_size_data) < 8:
+                raise ConnectionError("Failed to receive response size")
+            
+            response_size = int.from_bytes(response_size_data, 'big')
+            
+            # –… FIX: Receive complete response in chunks
+            response_data = b''
+            while len(response_data) < response_size:
+                chunk = sock.recv(min(4096, response_size - len(response_data)))
+                if not chunk:
+                    break
+                response_data += chunk
+            
+            if len(response_data) < response_size:
+                raise ConnectionError(f"Incomplete response: {len(response_data)}/{response_size} bytes")
+            
+            response = pickle.loads(response_data)
+            
+            sock.close()
+            return response
+        
+        except Exception as e:
+            print(f"✗ Communication error: {e}")
+            return None
+    
+    # --- NEW: Background ML training loop ---
+    def ml_training_loop(self):
+        """Background thread for periodic ML model training - ENHANCED"""
+        while self.running:
+            try:
+                # ✅ Finalize window every 60 seconds
+                if self.feature_manager.should_finalize_window():
+                    feature_vector = self.feature_manager.finalize_window()
+                    
+                    buffer_size = len(self.feature_manager.feature_buffer)
+                    print(f"[ML] Window finalized → {buffer_size} total windows in buffer")
+                    
+                    # ✅ CRITICAL FIX: Train IMMEDIATELY when we have 20+ samples
+                    if buffer_size >= 20 and not self.anomaly_detector.isolation_forest:
+                        print(f"\n[ML TRAINING] ⚡ IMMEDIATE TRAINING with {buffer_size} samples...")
+                        feature_matrix, feature_names = self.feature_manager.get_feature_matrix()
+                        
+                        if feature_matrix is not None and len(feature_matrix) >= 20:
+                            success = self.anomaly_detector.train_models(feature_matrix)
+                            
+                            if success:
+                                print(f"✓ ML models trained successfully!")
+                                if hasattr(self, 'gui') and self.gui:
+                                    self.gui.add_log(f"✓ Models trained ({len(feature_matrix)} samples)")
+                                
+                                # Cache models immediately
+                                self.send_models_to_server_cache()
+                            else:
+                                print(f"✗ ML training failed")
+                    
+                    # ✅ Check if retraining is needed (existing logic)
+                    elif self.anomaly_detector.should_retrain(buffer_size):
+                        feature_matrix, feature_names = self.feature_manager.get_feature_matrix()
+                        
+                        if feature_matrix is not None and len(feature_matrix) >= 20:
+                            print(f"\n[ML TRAINING] Starting with {len(feature_matrix)} samples...")
+                            success = self.anomaly_detector.train_models(feature_matrix)
+                            
+                            if success:
+                                print(f"✓ ML models retrained successfully")
+                                if hasattr(self, 'gui') and self.gui:
+                                    self.gui.add_log(f"✓ Models retrained ({len(feature_matrix)} samples)")
+                                
+                                self.send_models_to_server_cache()
+                
+                # ✅ Sleep for 10 seconds
+                time.sleep(10)
+                
+            except Exception as e:
+                print(f"✗ ML training loop error: {e}")
+                import traceback
+                traceback.print_exc()
+                time.sleep(30)
+
+    
+    # --- NEW: Generate anomaly alert with explainability ---
+    def generate_anomaly_alert(self, feature_vector, anomaly_info, feature_names):
+        """Generate detailed anomaly alert - deduplicated + explainability"""
+
+        # –… Build alert signature for duplicate suppression
+        contrib = anomaly_info.get('contributing_features', [])
+        severity = anomaly_info.get('severity', 'unknown')
+
+        alert_signature = f"{severity}_{','.join(contrib[:3])}"
+
+        # –… Check last 10 alerts for duplicates
+        recent_signatures = [
+            f"{a.get('severity','')}_{','.join(a.get('contributing_features',[])[:3])}"
+            for a in list(self.anomaly_alerts)[-10:]
+        ]
+
+        if alert_signature in recent_signatures:
+            print(f"  [ALERT] Duplicate anomaly suppressed: {alert_signature}")
+            return  # –… STOP HERE
+
+        # =====================================================
+        # –… Build explainability text
+        # =====================================================
+        explanation_parts = []
+
+        if anomaly_info.get('zscore_flag'):
+            explanation_parts.append("Extreme Z-score deviation")
+
+        if anomaly_info.get('iso_score') is not None:
+            explanation_parts.append(f"Isolation Forest score: {anomaly_info['iso_score']:.4f}")
+
+        if anomaly_info.get('ae_recon_error') is not None:
+            explanation_parts.append(
+                f"Autoencoder reconstruction error: {anomaly_info['ae_recon_error']:.4f}"
+            )
+
+        if contrib:
+            explanation_parts.append(
+                f"Top contributing features: {', '.join(contrib[:5])}"
+            )
+
+        alert = {
+            'timestamp': datetime.now().isoformat(),
+            'hostname': socket.gethostname(),
+            'client_id': CLIENT_ID,
+            'severity': severity,
+            'is_anomaly': anomaly_info.get('is_anomaly'),
+            'zscore_flag': anomaly_info.get('zscore_flag'),
+            'iso_score': anomaly_info.get('iso_score'),
+            'ae_recon_error': anomaly_info.get('ae_recon_error'),
+            'contributing_features': contrib,
+            'feature_vector': {k: v for k, v in feature_vector.items() if k != 'timestamp'},
+            'explanation': " | ".join(explanation_parts),
+            'signature': alert_signature   # –… stored for future pattern detection
+        }
+
+        # –… Add alert AFTER duplicate suppression
+        self.anomaly_alerts.append(alert)
+
+        # =====================================================
+        # –… Output
+        # =====================================================
+        print(f"\n{'='*60}")
+        print(f"⚠️ ANOMALY DETECTED - Severity: {severity.upper()}")
+        print(f"{'='*60}")
+        print(f"Time: {alert['timestamp']}")
+        print(f"Explanation: {alert['explanation']}")
+        print(f"{'='*60}\n")
+
+        # –… GUI logging
+        if hasattr(self, 'gui') and self.gui:
+            self.gui.add_log(f"⚠️ ANOMALY DETECTED - {severity.upper()}")
+            self.gui.add_log(f"   {alert['explanation']}")
+
+            
+    def collect_and_send(self):
+        """Collect telemetry and send to server with REAL ML anomaly detection"""
+        try:
+            print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Collecting telemetry...")
+            
+            if hasattr(self, 'gui') and self.gui:
+                self.gui.add_log("📊 Collecting telemetry data...")
+            
+            # ✅ CRITICAL FIX: Collect data FIRST before any processing
+            network_data = self.collectors['network'].collect()
+            process_data = self.collectors['process'].collect()
+            filesystem_data = self.collectors['filesystem'].collect()
+            user_data = self.collectors['user'].collect()
+            
+            # ✅ CRITICAL FIX: Verify data collection
+            print(f"  [DEBUG] Collected: Network={len(network_data.get('all_events', []))}, "
+                f"Process={len(process_data.get('details', []))}, "
+                f"Filesystem={len(filesystem_data)}, User={len(user_data)}")
+            
+            # ✅ Update feature window AFTER collection
+            if 'all_events' in network_data:
+                for event in network_data['all_events']:
+                    self.feature_manager.update_network_event(event)
+            
+            if (self.anomaly_detector.isolation_forest is not None or
+                (self.anomaly_detector.autoencoder and self.anomaly_detector.autoencoder.is_trained)):
+                
+                # Get current feature matrix
+                feature_matrix, feature_names = self.feature_manager.get_feature_matrix()
+                
+                if feature_matrix is not None and len(feature_matrix) > 0:
+                    # Test detection on latest window
+                    latest_features = feature_matrix[-1]
+                    
+                    try:
+                        is_anomaly, anomaly_info = self.anomaly_detector.detect_anomaly_ensemble(
+                            latest_features,
+                            feature_names
+                        )
+                        
+                        if is_anomaly:
+                            print(f"  [DETECTION] ⚠️ Anomaly detected in latest window!")
+                            print(f"    Severity: {anomaly_info.get('severity')}")
+                            print(f"    Features: {anomaly_info.get('contributing_features', [])[:3]}")
+                    except Exception as e:
+                        print(f"  [DETECTION] Error: {e}")
+                        
+            if 'details' in process_data:
+                for event in process_data['details']:
+                    self.feature_manager.update_process_event(event)
+            
+            if 'high_risk' in process_data:
+                for event in process_data['high_risk']:
+                    self.feature_manager.update_process_event(event)
+            
+            for event in filesystem_data:
+                self.feature_manager.update_filesystem_event(event)
+            
+            # ✅ ML anomaly detection (happens after data collection)
+            ml_anomaly_alerts = []
+            
+            # Check for ML-detected anomalies in collected data
+            if 'all_events' in network_data:
+                for event in network_data['all_events']:
+                    if event.get('detection_method') == 'ml' and event.get('is_anomaly'):
+                        ml_anomaly_alerts.append({
+                            'timestamp': datetime.now().isoformat(),
+                            'category': 'network',
+                            'severity': 'high' if event['risk_score'] > 8 else 'medium',
+                            'iso_score': event.get('anomaly_score'),
+                            'ae_recon_error': None,
+                            'contributing_features': [ind.replace('ml_', '') for ind in event.get('threat_indicators', []) if ind.startswith('ml_')],
+                            'explanation': f"ML-detected anomalous network connection to {event.get('dst_ip')}:{event.get('dst_port')}"
+                        })
+            
+            # ✅ CRITICAL FIX: Build telemetry payload with ALL collected data
+            recent_anomaly_alerts = []
+            if hasattr(self.anomaly_detector, 'anomaly_alerts'):
+                # Get last 50 alerts
+                recent_anomaly_alerts = list(self.anomaly_detector.anomaly_alerts)[-50:]
+            
+            telemetry = {
+                'type': 'telemetry',
+                'client_id': CLIENT_ID,
+                'timestamp': datetime.now().isoformat(),
+                'network': network_data,
+                'processes': process_data,
+                'filesystem': filesystem_data,
+                'user_activity': user_data,
+                'ml_anomaly_alerts': ml_anomaly_alerts,  # ✅ Keep existing
+                'anomaly_alerts': recent_anomaly_alerts  # ✅ NEW: Send all alerts
+            }
+            
+            # ✅ FIX: Clear sent alerts to prevent duplicates
+            if hasattr(self.anomaly_detector, 'anomaly_alerts'):
+                # Keep only last 10 for GUI display
+                alerts_to_keep = list(self.anomaly_detector.anomaly_alerts)[-10:]
+                self.anomaly_detector.anomaly_alerts.clear()
+                for alert in alerts_to_keep:
+                    self.anomaly_detector.anomaly_alerts.append(alert)
+            
+            # ✅ Enhanced logging
+            print(f"  Network: {len(network_data.get('details', []))} events")
+            print(f"  Process: {len(process_data.get('details', []))} monitored, "
+                f"{len(process_data.get('high_risk', []))} high-risk")
+            print(f"  Filesystem: {len(filesystem_data)} events")
+            print(f"  User: {len(user_data)} events")
+            print(f"  Feature Buffer: {len(self.feature_manager.feature_buffer)} windows")
+            print(f"  ML Anomalies: {len(ml_anomaly_alerts)}")
+            
+            iso_trained = "✓" if self.anomaly_detector.isolation_forest else "✗"
+            ae_trained = "✓" if (self.anomaly_detector.autoencoder and 
+                                 self.anomaly_detector.autoencoder.is_trained) else "✗"
+            print(f"  ML Models: ISO={iso_trained}, AE={ae_trained}")
+            
+            # ✅ Send to server
+            response = self.send_to_server(telemetry)
+            if response and response.get('status') == 'received':
+                print("✓ Telemetry sent successfully")
+                if hasattr(self, 'gui') and self.gui:
+                    self.gui.add_log("✓ Telemetry sent successfully")
+                
+                if 'alerts' in response:
+                    for alert in response['alerts']:
+                        print(f"⚠️ ALERT: {alert}")
+                        if hasattr(self, 'gui') and self.gui:
+                            self.gui.add_log(f"⚠️ ALERT: {alert}")
+            else:
+                print("✗ Failed to send telemetry")
+        
+        except Exception as e:
+            print(f"✗ Collection error: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _build_anomaly_explanation(self, anomaly_info, feature_names, feature_values):
+        """Build human-readable explanation of anomaly"""
+        parts = []
+        
+        if anomaly_info.get('zscore_flag'):
+            parts.append("Extreme statistical deviation detected")
+        
+        if anomaly_info.get('iso_score') is not None:
+            parts.append(f"Isolation Forest score: {anomaly_info['iso_score']:.4f}")
+        
+        if anomaly_info.get('ae_recon_error') is not None:
+            parts.append(f"Autoencoder error: {anomaly_info['ae_recon_error']:.4f}")
+        
+        # Add top contributing features with VALUES
+        contrib = anomaly_info.get('contributing_features', [])
+        if contrib:
+            feature_details = []
+            for feat in contrib[:3]:
+                try:
+                    idx = feature_names.index(feat)
+                    val = feature_values[idx]
+                    feature_details.append(f"{feat}={val:.2f}")
+                except:
+                    feature_details.append(feat)
+            
+            parts.append(f"Key features: {', '.join(feature_details)}")
+        
+        return " | ".join(parts)
+
+    def send_models_to_server_cache(self):
+        """Send trained models to server for caching (called after FL updates)"""
+        try:
+            cached_models = {}
+            
+            # Serialize Isolation Forest
+            if self.anomaly_detector.isolation_forest is not None:
+                try:
+                    iso_bytes = pickle.dumps(self.anomaly_detector.isolation_forest)
+                    cached_models['isolation_forest'] = iso_bytes
+                except Exception as e:
+                    print(f"  âš  Could not serialize Isolation Forest: {e}")
+            
+            # Serialize Autoencoder
+            if self.anomaly_detector.autoencoder and self.anomaly_detector.autoencoder.is_trained:
+                try:
+                    ae_config = {
+                        'input_dim': self.anomaly_detector.autoencoder.input_dim,
+                        'weights': self.anomaly_detector.autoencoder.get_weights(),
+                        'threshold': self.anomaly_detector.ae_threshold,
+                        'scaler_mean': self.anomaly_detector.autoencoder.scaler.mean_.tolist() if hasattr(self.anomaly_detector.autoencoder.scaler, 'mean_') else None,
+                        'scaler_scale': self.anomaly_detector.autoencoder.scaler.scale_.tolist() if hasattr(self.anomaly_detector.autoencoder.scaler, 'scale_') else None
+                    }
+                    cached_models['autoencoder_config'] = ae_config
+                except Exception as e:
+                    print(f"  âš  Could not serialize Autoencoder: {e}")
+            
+            # Add metadata
+            cached_models['last_training_time'] = self.anomaly_detector.last_training_time
+            cached_models['feature_buffer'] = list(self.feature_manager.feature_buffer)[-50:]  # Last 50 windows
+            
+            # Send to server
+            if cached_models:
+                data = {
+                    'type': 'cache_models',
+                    'client_id': CLIENT_ID,
+                    'timestamp': datetime.now().isoformat(),
+                    'cached_models': cached_models
+                }
+                
+                response = self.send_to_server(data)
+                
+                if response and response.get('status') == 'models_cached':
+                    print("  – Models cached on server for future sessions")
+                else:
+                    print("  âš  Model caching may have failed")
+                    
+        except Exception as e:
+            print(f"  ✗ Error caching models: {e}")
+
+    
+    def send_fl_update(self):
+        """Send enhanced federated learning model update with full metadata"""
+        if not ENABLE_FL:
+            return
+        
+        try:
+            if self.fl_upload_callback:
+                self.fl_upload_callback("📤 Preparing FL model update...\n")
+    
+            if hasattr(self, 'gui') and self.gui:
+                self.gui.add_log("- Preparing FL model update...")
+            # First, adapt sensitivity locally
+            self.anomaly_detector.adapt_sensitivity_locally()
+            
+            # Get feature matrix for metadata
+            feature_matrix, feature_names = self.feature_manager.get_feature_matrix()
+            
+            # Get comprehensive model parameters
+            model_params = self.anomaly_detector.get_model_parameters()
+            
+            # --- NEW: Compute model delta if we have a global model ---
+            model_delta = None
+            delta_metadata = None
+            
+            if self.last_global_model is not None:
+                model_delta, delta_metadata = self.anomaly_detector.compute_fl_delta(
+                    self.last_global_model['weights']
+                )
+            
+            # Build FL update payload
+            data = {
+                'type': 'fl_update',
+                'client_id': CLIENT_ID,
+                'timestamp': datetime.now().isoformat(),
+                'model_parameters': model_params,
+                'model_delta': model_delta,  # NEW: Send delta instead of full weights
+                'delta_metadata': delta_metadata if model_delta else None,
+                'ml_model_status': {
+                    'isolation_forest_trained': self.anomaly_detector.isolation_forest is not None,
+                    'autoencoder_trained': (self.anomaly_detector.autoencoder is not None and 
+                                        self.anomaly_detector.autoencoder.is_trained),
+                    'feature_buffer_size': len(self.feature_manager.feature_buffer),
+                    'last_training_time': self.anomaly_detector.last_training_time
+                }
+            }
+            
+            print(f"\n{'='*60}")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔥 Sending Enhanced FL Update")
+            print(f"{'='*60}")
+            
+            response = self.send_to_server(data)
+            
+            # Validate server response
+            if response and response.get('status') == 'fl_received':
+                print("– Server acknowledged FL update")
+                
+                status_text = "✅ Server acknowledged FL update\n"
+            
+                # ✅ NEW: Send to FL Upload Status box
+                if self.fl_upload_callback:
+                    self.fl_upload_callback(status_text)
+                
+                print(status_text)
+
+                # Receive aggregated model
+                if 'aggregated_weights' in response:
+                    old_version = self.anomaly_detector.model_weights.get('version', 0)
+                    self.anomaly_detector.update_model_parameters(response['aggregated_weights'])
+                    new_version = response['aggregated_weights'].get('version', 0)
+
+                    update_msg = f"✅ Model updated: v{old_version} → v{new_version}\n"
+                
+                    # ✅ NEW: Send to FL Upload Status box
+                    if self.fl_upload_callback:
+                        self.fl_upload_callback(update_msg)
+                        
+                    # GUI success log (NOW valid)
+                    if hasattr(self, 'gui') and self.gui:
+                        self.gui.add_log(f"– FL update sent | Version: {new_version}")
+
+                    # Store for delta calculation
+                    self.last_global_model = response['aggregated_weights']
+
+                
+                # NEW: Send trained models to server for caching
+                if (self.anomaly_detector.isolation_forest is not None or (self.anomaly_detector.autoencoder and self.anomaly_detector.autoencoder.is_trained)):
+                    self.send_models_to_server_cache()
+                
+                # Display data quality                    
+                quality = model_params.get('data_quality', {})
+                anomaly_rate = model_params.get('anomaly_rate', 0)
+                
+                print(f"✓ FL update sent successfully")
+                print(f"  Data Quality:")
+                print(f"    Network samples: {quality.get('network_samples', 0)}")
+                print(f"    Process samples: {quality.get('process_samples', 0)}")
+                print(f"    File samples: {quality.get('file_samples', 0)}")
+                print(f"    Feature windows: {len(self.feature_manager.feature_buffer)}")
+                print(f"  Anomaly Rate: {anomaly_rate:.2%}")
+                
+                if model_delta and delta_metadata:
+                    print(f"  Model Delta:")
+                    print(f"    Delta norm: {delta_metadata['delta_norm']:.4f}")
+                    print(f"    Samples used: {delta_metadata['samples_used']}")
+                
+                print(f"  ML Models:")
+                print(f"    Isolation Forest: {'–' if data['ml_model_status']['isolation_forest_trained'] else '✗'}")
+                print(f"    Autoencoder: {'– ' if data['ml_model_status']['autoencoder_trained'] else '✗ '}")
+                
+                # Receive aggregated model
+                if 'aggregated_weights' in response:
+                    old_version = self.anomaly_detector.model_weights.get('version', 0)
+                    self.anomaly_detector.update_model_parameters(response['aggregated_weights'])
+                    new_version = response['aggregated_weights'].get('version', 0)
+                    
+                    # Store global model for next delta computation
+                    self.last_global_model = response['aggregated_weights']
+                    
+                    # Update autoencoder weights if available
+                    if 'autoencoder' in response['aggregated_weights'].get('weights', {}):
+                        ae_weights = response['aggregated_weights']['weights']['autoencoder']
+                        if self.anomaly_detector.autoencoder is not None:
+                            self.anomaly_detector.autoencoder.set_weights(ae_weights)
+                            print(f"  ✓ Autoencoder weights updated")
+                    
+                    if new_version > old_version:
+                        print(f"  ✓ New global model received: v{new_version}")
+                    else:
+                        print(f"  ✓ Model confirmed: v{new_version}")
+            else:
+                print(f"✗  FL update failed")
+            
+            print(f"{'='*60}\n")
+        
+        except Exception as e:
+            print(f"✗ FL update error: {e}")
+            import traceback
+            traceback.print_exc() 
+                     
+    def send_heartbeat(self):
+        """Send heartbeat to server"""
+        try:
+            data = {
+                'type': 'heartbeat',
+                'client_id': CLIENT_ID,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            response = self.send_to_server(data)
+            if response and response.get('status') == 'alive':
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] ❤️  Heartbeat sent")
+        
+        except Exception as e:
+            print(f"✗ Heartbeat error: {e}")
+    
+    def heartbeat_loop(self):
+        """Background heartbeat thread"""
+        while self.running:
+            time.sleep(HEARTBEAT_INTERVAL)
+            if self.running:
+                self.send_heartbeat()
+    
+    def collection_loop(self):
+        """Main collection loop"""
+        while self.running:
+            time.sleep(COLLECTION_INTERVAL)
+            if self.running:
+                self.collect_and_send()
+    
+    def fl_loop(self):
+        """Federated learning update loop with immediate first update"""
+        # Send first update immediately after 30 seconds
+        time.sleep(30)
+        if self.running and ENABLE_FL:
+            print("\n[FL] Sending initial model update...")
+            self.send_fl_update()
+        
+        # Then continue with regular interval
+        while self.running:
+            time.sleep(FL_UPDATE_INTERVAL)
+            if self.running and ENABLE_FL:
+                self.send_fl_update()
+    
+    def start(self):
+        """Start the agent with all threads"""
+        print("\nStarting FortifAI Client Agent with Enhanced ML Pipeline...")
+        
+        # Register with server
+        if not self.register_with_server():
+            print("✗ Failed to register with server. Retrying in 10 seconds...")
+            time.sleep(10)
+            if not self.register_with_server():
+                print("Cannot connect to server. Exiting.")
+                return
+        
+        self.running = True
+        
+        # ✅ FIX: Link anomaly_detector alerts to agent-level queue
+        # This ensures GUI can access them
+        self.anomaly_detector.anomaly_alerts = self.anomaly_alerts
+        
+        def delayed_initial_training():
+            """Bootstrap training - skip if models already loaded from server"""
+            time.sleep(180)
+            
+            if self.models_fetched_from_server:
+                print(f"\n[BOOTSTRAP] ✓ Server provided cached models during registration")
+                time.sleep(2)
+                
+                iso_loaded = self.anomaly_detector.isolation_forest is not None
+                ae_loaded = (self.anomaly_detector.autoencoder and 
+                            self.anomaly_detector.autoencoder.is_trained)
+                
+                models_applied = iso_loaded or ae_loaded
+                
+                if models_applied:
+                    print(f"[BOOTSTRAP] ✓ Models verified:")
+                    print(f"  - Isolation Forest: {'✓' if iso_loaded else '✗'}")
+                    print(f"  - Autoencoder: {'✓' if ae_loaded else '✗'}")
+                    print(f"[BOOTSTRAP] ✓ Skipping initial training")
+                    if hasattr(self, 'gui') and self.gui:
+                        self.gui.add_log("✓ Using cached models from server")
+                    return
+                else:
+                    print(f"[BOOTSTRAP] ⚠ Models flag set but not loaded - will train fresh")
+                    print(f"  Debug: ISO={iso_loaded}, AE={ae_loaded}")
+                    self.models_fetched_from_server = False
+            
+            feature_matrix, feature_names = self.feature_manager.get_feature_matrix()
+            
+            print(f"\n[BOOTSTRAP CHECK] Buffer has {len(self.feature_manager.feature_buffer)} windows")
+            
+            if feature_matrix is not None and len(feature_matrix) >= 20:
+                print(f"\n[BOOTSTRAP] Forcing initial training with {len(feature_matrix)} samples...")
+                success = self.anomaly_detector.train_models(feature_matrix)
+                
+                if success:
+                    print("[BOOTSTRAP] ✓ Models trained successfully!")
+                    if hasattr(self, 'gui') and self.gui:
+                        self.gui.add_log(f"✓ ML Models trained: {len(feature_matrix)} samples")
+                    
+                    self.send_models_to_server_cache()
+                else:
+                    print("[BOOTSTRAP] ✗ Training failed")
+            else:
+                actual_size = len(feature_matrix) if feature_matrix is not None else 0
+                print(f"[BOOTSTRAP] Insufficient data: {actual_size}/20 samples needed")
+        
+        # Start threads
+        bootstrap_thread = threading.Thread(target=delayed_initial_training, daemon=True)
+        heartbeat_thread = threading.Thread(target=self.heartbeat_loop, daemon=True)
+        collection_thread = threading.Thread(target=self.collection_loop, daemon=True)
+        fl_thread = threading.Thread(target=self.fl_loop, daemon=True)
+        training_thread = threading.Thread(target=self.ml_training_loop, daemon=True)
+        
+        # ✅ FIX: Start GUI refresh thread
+        if hasattr(self, 'gui') and self.gui:
+            gui_refresh_thread = threading.Thread(target=self.gui_refresh_loop, daemon=True)
+            gui_refresh_thread.start()
+        
+        heartbeat_thread.start()
+        collection_thread.start()
+        fl_thread.start()
+        training_thread.start()
+        bootstrap_thread.start()
+        
+        print("\n✓ Agent is running")
+        print("✓ ML training loop active")
+        print("Press Ctrl+C to stop\n")
+        
+        try:
+            while self.running:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\n\nStopping agent...")
+            self.running = False
+            time.sleep(2)
+            print("✓ Agent stopped")
+
+    def gui_refresh_loop(self):
+        """Periodically refresh GUI anomaly monitor - ENHANCED"""
+        while self.running:
+            time.sleep(2)  # Refresh every 2 seconds (faster response)
+            if hasattr(self, 'gui') and self.gui:
+                try:
+                    # ✅ FIX: Force refresh on GUI thread
+                    if hasattr(self.gui, 'root') and self.gui.root.winfo_exists():
+                        self.gui.root.after(0, self.gui.refresh_anomalies)
+                except Exception as e:
+                    print(f"GUI refresh error: {e}")
+    
+    def stop(self):
+        """Stop the agent"""
+        self.running = False
+
+# --- NEW: Desktop GUI for client agent ---
+class ClientGUI:
+    """Tkinter-based GUI for client agent monitoring and control"""
+    
+    def __init__(self, agent):
+        self.agent = agent
+        self.root = tk.Tk()
+        self.root.title(f"FortifAI Client Agent - {socket.gethostname()}")
+        self.root.geometry("1200x800")
+        
+        # Update queue for thread-safe GUI updates
+        self.update_queue = queue.Queue()
+        
+        # Style configuration
+        self.colors = {
+            'bg': '#2c3e50',
+            'fg': '#ecf0f1',
+            'accent': '#3498db',
+            'success': '#2ecc71',
+            'warning': '#f39c12',
+            'danger': '#e74c3c',
+            'panel': '#34495e'
+        }
+        
+        self.root.configure(bg=self.colors['bg'])
+        
+        # Create notebook (tabs)
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Create tabs
+        self.create_dashboard_tab()
+        self.create_anomaly_monitor_tab()
+        self.create_fl_status_tab()
+        self.create_logs_tab()
+        self.create_settings_tab()
+        
+        self.agent.anomaly_detector.gui_callback = self.on_backend_event
+        self.agent.fl_upload_callback = self.on_fl_upload_status
+        
+        # Status bar
+        self.status_bar = tk.Label(
+            self.root, 
+            text="Status: Initializing...", 
+            bd=1, 
+            relief=tk.SUNKEN, 
+            anchor=tk.W,
+            bg=self.colors['panel'],
+            fg=self.colors['fg']
+        )
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        # Start update loop
+        self.update_gui()
+    
+    def on_backend_event(self, event_type, data):
+        """Thread-safe callback from backend (called from worker threads)"""
+        # Queue the event for processing in GUI thread
+        self.update_queue.put(('backend_event', event_type, data))
+
+    def on_fl_upload_status(self, status_text):
+        """Thread-safe callback for FL upload status"""
+        # Queue the status update for processing in GUI thread
+        self.update_queue.put(('fl_status', status_text))
+
+    def process_update_queue(self):
+        """Process queued updates in GUI thread"""
+        try:
+            while True:
+                try:
+                    item = self.update_queue.get_nowait()
+                    
+                    if item[0] == 'backend_event':
+                        event_type, data = item[1], item[2]
+                        
+                        if event_type == 'anomaly':
+                            self.handle_anomaly_event(data)
+                    
+                    elif item[0] == 'fl_status':
+                        status_text = item[1]
+                        self.handle_fl_status_update(status_text)
+                    
+                except queue.Empty:
+                    break
+        except Exception as e:
+            print(f"Queue processing error: {e}")
+
+    def handle_anomaly_event(self, alert):
+        """Handle anomaly alert in GUI thread"""
+        try:
+            # Add to anomaly tree
+            self.refresh_anomalies()
+            
+            # Update detail panel if no selection
+            if not self.anomaly_tree.selection():
+                detail_text = f"""
+    {'='*64}
+                        LATEST ANOMALY DETECTED
+    {'='*64}
+
+    Timestamp:      {alert.get('timestamp', 'Unknown')}
+    Severity:       {alert.get('severity', 'unknown').upper()}
+    Client ID:      {alert.get('client_id', 'N/A')}
+    Hostname:       {alert.get('hostname', 'N/A')}
+
+    ─── Detection Scores ───
+    Z-Score Flag:   {alert.get('zscore_flag', False)}
+    ISO Score:      {alert.get('iso_score', 'N/A')}
+    AE Recon Error: {alert.get('ae_recon_error', 'N/A')}
+
+    ─── Contributing Features ───
+    {chr(10).join(['  • ' + f for f in alert.get('contributing_features', [])])}
+
+    ─── Explanation ───
+    {alert.get('explanation', 'No explanation available')}
+    """
+                self.anomaly_detail_text.delete('1.0', tk.END)
+                self.anomaly_detail_text.insert('1.0', detail_text)
+            
+            # Add log entry
+            self.add_log(f"⚠️ ANOMALY: {alert.get('severity', 'unknown').upper()} - {alert.get('explanation', '')[:80]}")
+            
+        except Exception as e:
+            print(f"Error handling anomaly event: {e}")
+
+    def handle_fl_status_update(self, status_text):
+        """Handle FL status update in GUI thread"""
+        try:
+            # Append to FL Upload Status text box
+            self.fl_upload_text.insert(tk.END, status_text)
+            self.fl_upload_text.see(tk.END)
+            
+            # Also add to logs
+            self.add_log(status_text.strip())
+            
+        except Exception as e:
+            print(f"Error handling FL status: {e}")
+            
+    def create_dashboard_tab(self):
+        """Create dashboard overview tab"""
+        dashboard = ttk.Frame(self.notebook)
+        self.notebook.add(dashboard, text="🏛️ Dashboard")
+
+        # Top frame - Agent status
+        status_frame = tk.LabelFrame(
+            dashboard, 
+            text="Agent Status", 
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 12, 'bold')
+        )
+        status_frame.pack(fill='x', padx=10, pady=5)
+        
+        # Status indicators
+        status_grid = tk.Frame(status_frame, bg=self.colors['panel'])
+        status_grid.pack(fill='x', padx=10, pady=10)
+        
+        self.status_labels = {}
+        
+        # Agent running status
+        self.status_labels['running'] = self.create_status_indicator(
+            status_grid, "Agent Status:", "Running", self.colors['success'], 0, 0
+        )
+        
+        # Server connection
+        self.status_labels['server'] = self.create_status_indicator(
+            status_grid, "Server:", "Connected", self.colors['success'], 0, 2
+        )
+        
+        # FL status
+        self.status_labels['fl'] = self.create_status_indicator(
+            status_grid, "FL Status:", "Active", self.colors['accent'], 1, 0
+        )
+        
+        # Model version
+        self.status_labels['model_version'] = self.create_status_indicator(
+            status_grid, "Model Version:", "0", self.colors['fg'], 1, 2
+        )
+        
+        # System metrics frame
+        metrics_frame = tk.LabelFrame(
+            dashboard,
+            text="System Metrics",
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 12, 'bold')
+        )
+        metrics_frame.pack(fill='x', padx=10, pady=5)
+        
+        metrics_grid = tk.Frame(metrics_frame, bg=self.colors['panel'])
+        metrics_grid.pack(fill='x', padx=10, pady=10)
+        
+        # CPU and RAM
+        self.status_labels['cpu'] = self.create_metric_display(
+            metrics_grid, "CPU Usage:", "0%", 0, 0
+        )
+        
+        self.status_labels['ram'] = self.create_metric_display(
+            metrics_grid, "RAM Usage:", "0%", 0, 2
+        )
+        
+        # Network connections
+        self.status_labels['connections'] = self.create_metric_display(
+            metrics_grid, "Active Connections:", "0", 1, 0
+        )
+        
+        # Running processes
+        self.status_labels['processes'] = self.create_metric_display(
+            metrics_grid, "Monitored Processes:", "0", 1, 2
+        )
+        
+        # ML Model status frame
+        ml_frame = tk.LabelFrame(
+            dashboard,
+            text="ML Model Status",
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 12, 'bold')
+        )
+        ml_frame.pack(fill='x', padx=10, pady=5)
+        
+        ml_grid = tk.Frame(ml_frame, bg=self.colors['panel'])
+        ml_grid.pack(fill='x', padx=10, pady=10)
+        
+        self.status_labels['iso_forest'] = self.create_status_indicator(
+            ml_grid, "Isolation Forest:", "Not Trained", self.colors['warning'], 0, 0
+        )
+        
+        self.status_labels['autoencoder'] = self.create_status_indicator(
+            ml_grid, "Autoencoder:", "Not Trained", self.colors['warning'], 0, 2
+        )
+        
+        self.status_labels['feature_buffer'] = self.create_metric_display(
+            ml_grid, "Feature Windows:", "0", 1, 0
+        )
+        
+        self.status_labels['anomaly_rate'] = self.create_metric_display(
+            ml_grid, "Anomaly Rate:", "0.0%", 1, 2
+        )
+    
+    def create_status_indicator(self, parent, label_text, value_text, color, row, col):
+        """Create a status indicator widget"""
+        frame = tk.Frame(parent, bg=self.colors['panel'])
+        frame.grid(row=row, column=col, padx=20, pady=5, sticky='w')
+        
+        label = tk.Label(
+            frame,
+            text=label_text,
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 10)
+        )
+        label.pack(side='left')
+        
+        value = tk.Label(
+            frame,
+            text=value_text,
+            bg=self.colors['panel'],
+            fg=color,
+            font=('Arial', 10, 'bold')
+        )
+        value.pack(side='left', padx=5)
+        
+        return value
+    
+    def create_metric_display(self, parent, label_text, value_text, row, col):
+        """Create a metric display widget"""
+        frame = tk.Frame(parent, bg=self.colors['panel'])
+        frame.grid(row=row, column=col, padx=20, pady=5, sticky='w')
+        
+        label = tk.Label(
+            frame,
+            text=label_text,
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 10)
+        )
+        label.pack(side='left')
+        
+        value = tk.Label(
+            frame,
+            text=value_text,
+            bg=self.colors['panel'],
+            fg=self.colors['accent'],
+            font=('Arial', 10, 'bold')
+        )
+        value.pack(side='left', padx=5)
+        
+        return value
+    
+    def create_anomaly_monitor_tab(self):
+        """Create real-time anomaly monitoring tab - FIXED GUI"""
+        anomaly_tab = ttk.Frame(self.notebook)
+        self.notebook.add(anomaly_tab, text="⚠️ Anomaly Monitor")
+
+        # Control buttons
+        control_frame = tk.Frame(anomaly_tab, bg=self.colors['panel'])
+        control_frame.pack(fill='x', padx=5, pady=5)
+        
+        refresh_btn = tk.Button(
+            control_frame,
+            text="🔄 Refresh",
+            command=self.refresh_anomalies,
+            bg=self.colors['accent'],
+            fg='white',
+            font=('Arial', 10, 'bold')
+        )
+        refresh_btn.pack(side='left', padx=5, pady=5)
+        
+        clear_btn = tk.Button(
+            control_frame,
+            text="🗑️ Clear",
+            command=self.clear_anomalies,
+            bg=self.colors['danger'],
+            fg='white',
+            font=('Arial', 10, 'bold')
+        )
+        clear_btn.pack(side='left', padx=5, pady=5)
+        
+        # ✅ FIX: Use PanedWindow for resizable split
+        paned = tk.PanedWindow(anomaly_tab, orient=tk.VERTICAL, bg=self.colors['bg'])
+        paned.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Top pane: Anomaly list
+        list_frame = tk.Frame(paned, bg=self.colors['bg'])
+        paned.add(list_frame, minsize=200)
+        
+        # Scrollbar
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side='right', fill='y')
+        
+        # Treeview for anomalies
+        columns = ('Timestamp', 'Severity', 'Iso Score', 'AE Error', 'Features')
+        self.anomaly_tree = ttk.Treeview(
+            list_frame,
+            columns=columns,
+            show='tree headings',
+            yscrollcommand=scrollbar.set,
+            height=10  # ✅ FIX: Set height to allow more space for details
+        )
+        
+        self.anomaly_tree.heading('#0', text='ID')
+        self.anomaly_tree.heading('Timestamp', text='Timestamp')
+        self.anomaly_tree.heading('Severity', text='Severity')
+        self.anomaly_tree.heading('Iso Score', text='ISO Score')
+        self.anomaly_tree.heading('AE Error', text='AE Error')
+        self.anomaly_tree.heading('Features', text='Top Features')
+        
+        self.anomaly_tree.column('#0', width=50)
+        self.anomaly_tree.column('Timestamp', width=180)
+        self.anomaly_tree.column('Severity', width=100)
+        self.anomaly_tree.column('Iso Score', width=100)
+        self.anomaly_tree.column('AE Error', width=100)
+        self.anomaly_tree.column('Features', width=400)
+        
+        self.anomaly_tree.pack(fill='both', expand=True)
+        scrollbar.config(command=self.anomaly_tree.yview)
+        
+        # ✅ FIX: Bottom pane with larger, scrollable detail panel
+        detail_frame = tk.LabelFrame(
+            paned,
+            text="Anomaly Details - Feature-Based Explanation",
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 10, 'bold')
+        )
+        paned.add(detail_frame, minsize=300)
+        
+        # ✅ FIX: Scrollable text with MORE HEIGHT
+        self.anomaly_detail_text = scrolledtext.ScrolledText(
+            detail_frame,
+            bg=self.colors['bg'],
+            fg=self.colors['fg'],
+            font=('Courier', 9),
+            wrap=tk.WORD,  # ✅ FIX: Word wrap instead of character wrap
+            height=20      # ✅ FIX: Increased from 8 to 20
+        )
+        self.anomaly_detail_text.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Bind selection event
+        self.anomaly_tree.bind('<<TreeviewSelect>>', self.on_anomaly_select)
+    
+    def create_fl_status_tab(self):
+        """Create federated learning status tab"""
+        fl_tab = ttk.Frame(self.notebook)
+        self.notebook.add(fl_tab, text="🤝 FL Status")
+        
+        # Training status
+        training_frame = tk.LabelFrame(
+            fl_tab,
+            text="Local Training Status",
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 12, 'bold')
+        )
+        training_frame.pack(fill='x', padx=10, pady=5)
+        
+        training_grid = tk.Frame(training_frame, bg=self.colors['panel'])
+        training_grid.pack(fill='x', padx=10, pady=10)
+        
+        self.fl_labels = {}
+        
+        self.fl_labels['local_version'] = self.create_metric_display(
+            training_grid, "Local Model Version:", "0", 0, 0
+        )
+        
+        self.fl_labels['global_version'] = self.create_metric_display(
+            training_grid, "Global Model Version:", "0", 0, 2
+        )
+        
+        self.fl_labels['samples_used'] = self.create_metric_display(
+            training_grid, "Samples Used:", "0", 1, 0
+        )
+        
+        self.fl_labels['delta_norm'] = self.create_metric_display(
+            training_grid, "Delta Norm:", "0.0", 1, 2
+        )
+        
+        self.fl_labels['last_training'] = self.create_metric_display(
+            training_grid, "Last Training:", "Never", 2, 0
+        )
+        
+        self.fl_labels['last_update'] = self.create_metric_display(
+            training_grid, "Last FL Update:", "Never", 2, 2
+        )
+        
+        # Upload status
+        upload_frame = tk.LabelFrame(
+            fl_tab,
+            text="FL Upload Status",
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 12, 'bold')
+        )
+        upload_frame.pack(fill='x', padx=10, pady=5)
+        
+        self.fl_upload_text = scrolledtext.ScrolledText(
+            upload_frame,
+            height=10,
+            bg=self.colors['bg'],
+            fg=self.colors['fg'],
+            font=('Courier', 9)
+        )
+        self.fl_upload_text.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Model weights display
+        weights_frame = tk.LabelFrame(
+            fl_tab,
+            text="Current Model Weights",
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 12, 'bold')
+        )
+        weights_frame.pack(fill='both', expand=True, padx=10, pady=5)
+        
+        self.fl_weights_text = scrolledtext.ScrolledText(
+            weights_frame,
+            bg=self.colors['bg'],
+            fg=self.colors['fg'],
+            font=('Courier', 9)
+        )
+        self.fl_weights_text.pack(fill='both', expand=True, padx=5, pady=5)
+    
+    def create_logs_tab(self):
+        """Create logs/history tab"""
+        logs_tab = ttk.Frame(self.notebook)
+        self.notebook.add(logs_tab, text="📞 Logs")
+        
+        # Control buttons
+        control_frame = tk.Frame(logs_tab, bg=self.colors['panel'])
+        control_frame.pack(fill='x', padx=5, pady=5)
+        
+        clear_btn = tk.Button(
+            control_frame,
+            text="Clear Logs",
+            command=self.clear_logs,
+            bg=self.colors['danger'],
+            fg='white',
+            font=('Arial', 10, 'bold')
+        )
+        clear_btn.pack(side='left', padx=5, pady=5)
+        
+        export_btn = tk.Button(
+            control_frame,
+            text="Export Logs",
+            command=self.export_logs,
+            bg=self.colors['accent'],
+            fg='white',
+            font=('Arial', 10, 'bold')
+        )
+        export_btn.pack(side='left', padx=5, pady=5)
+        
+        # Log display
+        self.log_text = scrolledtext.ScrolledText(
+            logs_tab,
+            bg=self.colors['bg'],
+            fg=self.colors['fg'],
+            font=('Courier', 9)
+        )
+        self.log_text.pack(fill='both', expand=True, padx=5, pady=5)
+    
+    # --- PATCH 3: Complete create_settings_tab method ---
+    def create_settings_tab(self):
+        """Create settings view tab"""
+        settings_tab = ttk.Frame(self.notebook)
+        self.notebook.add(settings_tab, text="⚙️ Settings")
+        
+        # Settings display (read-only)
+        settings_frame = tk.LabelFrame(
+            settings_tab,
+            text="Current Configuration (Read-Only)",
+            bg=self.colors['panel'],
+            fg=self.colors['fg'],
+            font=('Arial', 12, 'bold')
+        )
+        settings_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        self.settings_text = scrolledtext.ScrolledText(
+            settings_frame,
+            bg=self.colors['bg'],
+            fg=self.colors['fg'],
+            font=('Courier', 9)
+        )
+        self.settings_text.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # --- FIXED: Properly closed triple-quoted f-string ---
+        settings_info = f"""
+    ┌──────────────────────────────────────────────────────────────┐
+    │           FortifAI Client Agent Configuration                │
+    └──────────────────────────────────────────────────────────────┘
+
+    ─── Server Configuration ───
+    FL Server URL:        {SERVER_HOST}:{SERVER_PORT}
+    Connection Timeout:   10 seconds
+
+    ─── Client Information ───
+    Client ID:            {CLIENT_ID}
+    Hostname:             {socket.gethostname()}
+    OS:                   {platform.system()} {platform.version()}
+
+    ─── Collection Settings ───
+    Collection Interval:  {COLLECTION_INTERVAL} seconds
+    Heartbeat Interval:   {HEARTBEAT_INTERVAL} seconds
+    FL Update Interval:   {FL_UPDATE_INTERVAL} seconds
+
+    ─── Federated Learning ───
+    FL Enabled:           {ENABLE_FL}
+    Model Type:           IsolationForest + Autoencoder + Z-Score
+
+    ─── Feature Window Settings ───
+    Window Duration:      60 seconds
+    Max Windows:          1000
+    Buffer Size:          Dynamic
+
+    ─── Anomaly Detection ───
+    Z-Score Threshold:    3.0
+    Isolation Forest:     contamination=0.005, n_estimators=100
+    Autoencoder:          64 → 32 → 8 → 32 → 64
+
+    ─── Security & Privacy ───
+    Raw Data Export:      DISABLED
+    PII Collection:       DISABLED
+    Local Hashing Only:   ENABLED
+    L2 Clip Bound:        10.0
+    """
+        
+        self.settings_text.insert('1.0', settings_info)
+        self.settings_text.config(state='disabled')  # Make read-only
+
+    # --- PATCH 4: Add missing GUI methods after create_settings_tab ---
+    def refresh_anomalies(self):
+        """Refresh anomaly list from agent - ENHANCED POLLING"""
+        try:
+            # Clear existing items
+            for item in self.anomaly_tree.get_children():
+                self.anomaly_tree.delete(item)
+            
+            # ✅ FIX: Get anomalies from DETECTOR, not agent
+            anomalies = []
+            if hasattr(self.agent, 'anomaly_detector') and hasattr(self.agent.anomaly_detector, 'anomaly_alerts'):
+                anomalies = list(self.agent.anomaly_detector.anomaly_alerts)
+            elif hasattr(self.agent, 'anomaly_alerts'):
+                anomalies = list(self.agent.anomaly_alerts)
+            
+            if not anomalies:
+                # Show "No anomalies" message
+                self.anomaly_tree.insert(
+                    '',
+                    'end',
+                    text='0',
+                    values=('No anomalies detected', '', '', '', ''),
+                    tags=('normal',)
+                )
+                return
+            
+            print(f"[GUI] Refreshing anomaly monitor: {len(anomalies)} total alerts")
+            
+            for i, alert in enumerate(anomalies):
+                iso_score = f"{alert.get('iso_score', 'N/A'):.4f}" if alert.get('iso_score') else 'N/A'
+                ae_error = f"{alert.get('ae_recon_error', 'N/A'):.4f}" if alert.get('ae_recon_error') else 'N/A'
+                features = ', '.join(alert.get('contributing_features', [])[:3])
+                
+                self.anomaly_tree.insert(
+                    '',
+                    'end',
+                    text=str(i + 1),
+                    values=(
+                        alert.get('timestamp', 'Unknown'),
+                        alert.get('severity', 'unknown').upper(),
+                        iso_score,
+                        ae_error,
+                        features
+                    ),
+                    tags=(alert.get('severity', 'normal'),)
+                )
+            
+            # Configure tag colors
+            self.anomaly_tree.tag_configure('high', background='#e74c3c', foreground='white')
+            self.anomaly_tree.tag_configure('medium', background='#f39c12', foreground='white')
+            self.anomaly_tree.tag_configure('low', background='#3498db', foreground='white')
+            
+            print(f"[GUI] Anomaly tree populated with {len(anomalies)} items")
+        
+        except Exception as e:
+            print(f"[GUI] Error refreshing anomalies: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def clear_anomalies(self):
+        """Clear anomaly list"""
+        for item in self.anomaly_tree.get_children():
+            self.anomaly_tree.delete(item)
+        
+        if hasattr(self.agent, 'anomaly_alerts'):
+            self.agent.anomaly_alerts.clear()
+        
+        self.anomaly_detail_text.delete('1.0', tk.END)
+    
+    def on_anomaly_select(self, event):
+        """Handle anomaly selection"""
+        selection = self.anomaly_tree.selection()
+        if not selection:
+            return
+        
+        item = selection[0]
+        item_id = int(self.anomaly_tree.item(item, 'text')) - 1
+        
+        if hasattr(self.agent, 'anomaly_alerts') and 0 <= item_id < len(self.agent.anomaly_alerts):
+            alert = list(self.agent.anomaly_alerts)[item_id]
+            
+            detail_text = f"""
+────────────────────────────────────────────────────────────────
+                    ANOMALY DETAILS #{item_id + 1}
+────────────────────────────────────────────────────────────────
+
+Timestamp:      {alert.get('timestamp', 'Unknown')}
+Severity:       {alert.get('severity', 'unknown').upper()}
+Client ID:      {alert.get('client_id', 'N/A')}
+Hostname:       {alert.get('hostname', 'N/A')}
+
+─── Detection Scores ───
+Z-Score Flag:   {alert.get('zscore_flag', False)}
+ISO Score:      {alert.get('iso_score', 'N/A')}
+AE Recon Error: {alert.get('ae_recon_error', 'N/A')}
+
+─── Contributing Features ───
+{chr(10).join(['  • ' + f for f in alert.get('contributing_features', [])])}
+
+─── Explanation ───
+{alert.get('explanation', 'No explanation available')}
+
+─── Feature Vector ───
+"""
+            # Add feature vector
+            fv = alert.get('feature_vector', {})
+            for key, value in fv.items():
+                detail_text += f"  {key}: {value:.4f}\n"
+            
+            self.anomaly_detail_text.delete('1.0', tk.END)
+            self.anomaly_detail_text.insert('1.0', detail_text)
+    
+    def clear_logs(self):
+        """Clear log display"""
+        self.log_text.delete('1.0', tk.END)
+    
+    def export_logs(self):
+        """Export logs to file"""
+        from tkinter import filedialog
+        
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            title="Export Logs"
+        )
+        
+        if filename:
+            try:
+                with open(filename, 'w') as f:
+                    f.write(self.log_text.get('1.0', tk.END))
+                self.add_log(f"– Logs exported to {filename}")
+            except Exception as e:
+                self.add_log(f"✗ Export failed: {e}")
+    
+    def add_log(self, message):
+        """Add message to log display"""
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
+        self.log_text.see(tk.END)
+    
+    def update_gui(self):
+        """Periodic GUI update"""
+        try:
+            self.process_update_queue()
+            # Update system metrics
+            cpu_percent = psutil.cpu_percent()
+            ram_percent = psutil.virtual_memory().percent
+            
+            self.status_labels['cpu'].config(text=f"{cpu_percent:.1f}%")
+            self.status_labels['ram'].config(text=f"{ram_percent:.1f}%")
+            
+            # Color code CPU/RAM
+            if cpu_percent > 80:
+                self.status_labels['cpu'].config(fg=self.colors['danger'])
+            elif cpu_percent > 50:
+                self.status_labels['cpu'].config(fg=self.colors['warning'])
+            else:
+                self.status_labels['cpu'].config(fg=self.colors['success'])
+            
+            if ram_percent > 80:
+                self.status_labels['ram'].config(fg=self.colors['danger'])
+            elif ram_percent > 50:
+                self.status_labels['ram'].config(fg=self.colors['warning'])
+            else:
+                self.status_labels['ram'].config(fg=self.colors['success'])
+            
+            # Update agent status
+            if self.agent.running:
+                self.status_labels['running'].config(text="Running", fg=self.colors['success'])
+            else:
+                self.status_labels['running'].config(text="Stopped", fg=self.colors['danger'])
+            
+            # Update ML model status
+            if self.agent.anomaly_detector.isolation_forest is not None:
+                self.status_labels['iso_forest'].config(text="Trained ", fg=self.colors['success'])
+            else:
+                self.status_labels['iso_forest'].config(text="Not Trained", fg=self.colors['warning'])
+            
+            if (self.agent.anomaly_detector.autoencoder is not None and 
+                self.agent.anomaly_detector.autoencoder.is_trained):
+                self.status_labels['autoencoder'].config(text="Trained ", fg=self.colors['success'])
+            else:
+                self.status_labels['autoencoder'].config(text="Not Trained", fg=self.colors['warning'])
+            
+            # Update feature buffer count
+            buffer_size = len(self.agent.feature_manager.feature_buffer)
+            self.status_labels['feature_buffer'].config(text=str(buffer_size))
+            
+            # Update anomaly rate
+            detector = self.agent.anomaly_detector
+            anomaly_rate = detector.anomaly_count / max(detector.total_detections, 1)
+            self.status_labels['anomaly_rate'].config(text=f"{anomaly_rate:.2%}")
+            
+            # Update connection count (approximate)
+            try:
+                connections = len([c for c in psutil.net_connections(kind='inet') 
+                                  if c.status == 'ESTABLISHED'])
+                self.status_labels['connections'].config(text=str(connections))
+            except:
+                pass
+            
+            # Update process count
+            try:
+                proc_count = len(list(psutil.process_iter()))
+                self.status_labels['processes'].config(text=str(proc_count))
+            except:
+                pass
+            
+            # Update model version
+            model_version = self.agent.anomaly_detector.model_weights.get('version', 0)
+            self.status_labels['model_version'].config(text=str(model_version))
+            
+            # Update FL tab
+            self.update_fl_tab()
+            
+            # Update status bar
+            self.status_bar.config(
+                text=f"Status: Running | CPU: {cpu_percent:.1f}% | RAM: {ram_percent:.1f}% | "
+                     f"Anomalies: {detector.anomaly_count} | Buffer: {buffer_size} windows"
+            )
+            
+        except Exception as e:
+            print(f"GUI update error: {e}")
+        
+        # Schedule next update (every 5 seconds)
+        self.root.after(5000, self.update_gui)
+    
+    def update_fl_tab(self):
+        """Update FL status tab - FIXED: Show correct delta norms and metadata"""
+        try:
+            detector = self.agent.anomaly_detector
+            
+            # Local / Global versions
+            local_version = detector.model_weights.get('version', 0)
+            self.fl_labels['local_version'].config(text=str(local_version))
+
+            if self.agent.last_global_model:
+                global_version = self.agent.last_global_model.get('version', 0)
+                self.fl_labels['global_version'].config(text=str(global_version))
+            
+            # –… Correct sample counts
+            network_samples = len(detector.network_baseline.get('connections', []))
+            process_samples = len(detector.process_baseline.get('count', []))
+            file_samples = len(detector.file_baseline.get('events', []))
+            total_samples = network_samples + process_samples + file_samples
+            self.fl_labels['samples_used'].config(text=str(total_samples))
+            
+            # –… Delta norm from pending FL updates
+            if hasattr(self.agent, 'fl_manager') and self.agent.fl_manager.pending_updates:
+                recent_update = self.agent.fl_manager.pending_updates[-1]
+                delta_norm = recent_update.get('post_norm', 0.0)
+                self.fl_labels['delta_norm'].config(text=f"{delta_norm:.4f}")
+            else:
+                self.fl_labels['delta_norm'].config(text="No updates yet")
+            
+            # –… Last local training time
+            if detector.last_training_time:
+                last_train = datetime.fromtimestamp(detector.last_training_time)
+                self.fl_labels['last_training'].config(
+                    text=last_train.strftime('%Y-%m-%d %H:%M:%S')
+                )
+            else:
+                self.fl_labels['last_training'].config(text="Never")
+            
+            # –… Last global update timestamp
+            if self.agent.last_global_model:
+                last_update_str = self.agent.last_global_model.get('last_update', 'Unknown')
+                if isinstance(last_update_str, datetime):
+                    last_update_str = last_update_str.strftime('%Y-%m-%d %H:%M:%S')
+                self.fl_labels['last_update'].config(text=str(last_update_str))
+
+            # –… Keep existing weight display
+            self.fl_weights_text.delete('1.0', tk.END)
+            weights_text = "─── Current Model Weights ───\n\n"
+            
+            for key, value in sorted(detector.model_weights.items()):
+                if isinstance(value, float):
+                    weights_text += f"  {key}: {value:.6f}\n"
+                else:
+                    weights_text += f"  {key}: {value}\n"
+
+            self.fl_weights_text.insert('1.0', weights_text)
+
+        except Exception as e:
+            print(f"FL tab update error: {e}")
+
+    
+    def run(self):
+        """Start the GUI main loop"""
+        self.root.mainloop()
+    
+    def stop(self):
+        """Stop the GUI"""
+        self.root.quit()
+        self.root.destroy()
+        
+def main():
+    """Main entry point with GUI support"""
+    import argparse
+    global SERVER_HOST, SERVER_PORT   # <-- MUST come before any usage
+
+    parser = argparse.ArgumentParser(description='FortifAI Client Agent')
+    parser.add_argument('--no-gui', action='store_true', help='Run without GUI')
+    parser.add_argument('--server', type=str, default=SERVER_HOST, help='Server IP address')
+    parser.add_argument('--port', type=int, default=SERVER_PORT, help='Server port')
+    args = parser.parse_args()
+    
+    # Update global config
+    SERVER_HOST = args.server
+    SERVER_PORT = args.port
+    
+    agent = ClientAgent()
+    
+    if args.no_gui:
+        agent.start()
+    else:
+        try:
+            # Start agent in background
+            agent_thread = threading.Thread(
+                target=run_agent_background,
+                args=(agent,),
+                daemon=True
+            )
+            agent_thread.start()
+            
+            # Start GUI
+            gui = ClientGUI(agent)
+            agent.gui = gui   # <-- PATCH 7B: Link agent with GUI
+            
+            # Handle window close
+            def on_closing():
+                agent.stop()
+                gui.stop()
+            
+            gui.root.protocol("WM_DELETE_WINDOW", on_closing)
+            gui.run()
+        
+        except tk.TclError as e:
+            print(f"GUI not available: {e}")
+            print("Falling back to console mode...")
+            agent.start()
+
+
+# PATCH 7 â€“ FIXED run_agent_background()
+def run_agent_background(agent):
+    """Run agent in background for GUI mode"""
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        if agent.register_with_server():
+            break
+        print(f"Registration attempt {attempt+1}/{max_retries} failed, retrying...")
+        time.sleep(5)
+    else:
+        print("Failed to register with server after multiple attempts")
+        return
+    
+    agent.running = True
+    
+    # ✅ FIX: Define delayed_initial_training with proper closure
+    def delayed_initial_training():
+        """Bootstrap training - skip if models already loaded from server"""
+        time.sleep(180)  # Wait 3 minutes
+        
+        # ✅ ENHANCED: Re-verify models after waiting period
+        if agent.models_fetched_from_server:
+            # Double-check models are still loaded
+            iso_loaded = agent.anomaly_detector.isolation_forest is not None
+            ae_loaded = (agent.anomaly_detector.autoencoder and 
+                        agent.anomaly_detector.autoencoder.is_trained)
+            
+            models_applied = iso_loaded or ae_loaded
+            
+            if models_applied:
+                print(f"\n[BOOTSTRAP] ✓ Models verified after restart:")
+                print(f"  - Isolation Forest: {'✓' if iso_loaded else '✗'}")
+                print(f"  - Autoencoder: {'✓' if ae_loaded else '✗'}")
+                print(f"[BOOTSTRAP] ✓ Skipping initial training")
+                if hasattr(agent, 'gui') and agent.gui:
+                    agent.gui.add_log("✓ Using cached models from server")
+                return  # ✅ EXIT - models loaded successfully
+            else:
+                print(f"[BOOTSTRAP] ⚠ Flag set but models missing - will train fresh")
+                print(f"  Debug: ISO={iso_loaded}, AE={ae_loaded}")
+                agent.models_fetched_from_server = False  # Reset flag
+        
+        # Only train if no cached models
+        feature_matrix, feature_names = agent.feature_manager.get_feature_matrix()
+        
+        buffer_size = len(agent.feature_manager.feature_buffer)
+        print(f"\n[BOOTSTRAP CHECK] Buffer has {buffer_size} windows")
+        
+        # ✅ CRITICAL FIX: Train with as few as 10 samples for bootstrap
+        if feature_matrix is not None and len(feature_matrix) >= 10:  # ✅ Lowered from 20
+            print(f"\n[BOOTSTRAP] ⚡ FORCING initial training with {len(feature_matrix)} samples...")
+            
+            # ✅ Pad feature matrix if needed to reach minimum
+            if len(feature_matrix) < 20:
+                print(f"  [BOOTSTRAP] Padding {len(feature_matrix)} samples to 20 with synthetic data...")
+                # Duplicate existing samples with slight noise
+                padded_matrix = []
+                for i in range(20):
+                    idx = i % len(feature_matrix)
+                    sample = feature_matrix[idx].copy()
+                    # Add small random noise (5% variance)
+                    noise = np.random.normal(0, 0.05, size=sample.shape)
+                    sample += noise
+                    padded_matrix.append(sample)
+                feature_matrix = np.array(padded_matrix)
+            
+            success = agent.anomaly_detector.train_models(feature_matrix)
+            
+            if success:
+                print("[BOOTSTRAP] ✓ Models trained successfully!")
+                if hasattr(agent, 'gui') and agent.gui:
+                    agent.gui.add_log(f"✓ ML Models trained: {len(feature_matrix)} samples")
+                
+                agent.send_models_to_server_cache()
+            else:
+                print("[BOOTSTRAP] ✗ Training failed")
+        else:
+            actual_size = len(feature_matrix) if feature_matrix is not None else 0
+            print(f"[BOOTSTRAP] Insufficient data: {actual_size}/10 samples needed")
+    
+    # ✅ FIX: Start threads with proper targets
+    threads = [
+        threading.Thread(target=delayed_initial_training, daemon=True),
+        threading.Thread(target=agent.heartbeat_loop, daemon=True),
+        threading.Thread(target=agent.collection_loop, daemon=True),
+        threading.Thread(target=agent.fl_loop, daemon=True),
+        threading.Thread(target=agent.ml_training_loop, daemon=True)
+    ]
+    
+    for t in threads:
+        t.start()
+    
+    # Keep background alive
+    while agent.running:
+        time.sleep(1)
+
+
+if __name__ == '__main__':
+    main()

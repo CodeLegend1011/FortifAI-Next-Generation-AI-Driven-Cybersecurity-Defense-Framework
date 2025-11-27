@@ -1,0 +1,44 @@
+[H[2J[3J[1m[0mOperating System: [32mlinux[0m
+
+     _            _       _                            __
+  __| | __ _ _ __| | ____| |_   _ _ __ ___  _ __      / /
+ / _` |/ _` | '__| |/ / _` | | | | '_ ` _ \| '_ \    / / 
+| (_| | (_| | |  |   < (_| | |_| | | | | | | |_) |  / /  
+ \__,_|\__,_|_|  |_|\_\__,_|\__,_|_| |_| |_| .__/  /_/  v3 by Josh Schiavone 
+                                           |_|           
+              
+
+Note: 
+    This tool is not to be used for illegal purposes.
+    The author is not responsible for any misuse of Darkdump.
+    May God bless you all.
+    https://joshschiavone.com - https://github.com/josh0xA
+
+[31mDEBUG mode is on.[0m
+Searching For: Paytm Data Breach and showing 10 results...
+Indexing is viable, skipping dead onions.
+
+[1m[32mTor service is active.[0m
+[1m[35mCurrent IP Address via Tor: [0m45.84.107.198
+--------------------------------------------------
+[1m2.
+ --- [+] Website: [0m[35mData Breach | Surveillance Self-Defense[0m
+[1m| Information: [0m[32mNo description provided[0m
+[1m| Onion Link: [0m[32mhttp://y7yea4pmqqtznb33qiugvysyn2bob5v62e4pvoadoibrwkq3tsddjeyd.onion[0m
+[1m| Keywords: [0m[32msecurity, privacy, online, use, encryption, guides, know, iphone, surveillance, get, settings, animated, overview, index, protecting, basics, tool, scenarios[0m
+[1m	- Sentiment: Polarity = 0.22, Subjectivity = 0.43
+[1m| Metadata: [0m[32m{"viewport": "width=device-width, initial-scale=1.0", "og:url": "https://ssd.iykpqm7jiradoeezzkhj7c4b33g4hbgfwelht2evxxeicbpjy44c7ead.onion/", "og:title": "Surveillance Self-Defense", "og:type": "website", "og:image": null, "og:image:width": "1200", "og:image:height": "600", "og:description": "We\u2019re the Electronic Frontier Foundation, a member-supported non-profit working to protect online privacy for over thirty-five years. This is Surveillance Self-Defense: our expert guide to protecting you and your friends from online spying.\n\nRead the BASICS to find out how online surveillance works. Dive into our TOOL GUIDES for instructions...", "twitter:card": "summary_large_image", "twitter:site": "@eff", "twitter:creator": "@eff", "sentry-trace": "45851498b50d4170baf3a722d8376c84-c3d63908f6704425-1", "baggage": "sentry-trace_id=45851498b50d4170baf3a722d8376c84,sentry-sample_rate=1.0,sentry-sampled=true,sentry-environment=production,sentry-public_key=5e85922938ef56028dea6cc7ad5924e4", "csrf-param": "authenticity_token", "csrf-token": "vaDyuyXb0u1AAfqn_Pb5JxO7ByBPxZVHvBzDusDFt_6wc8530XiKb28oYyO_pGXZwTPuM9YvG4RAXrfWicb1zA"}[0m
+[1m| Links Found: [0m[32m118[0m
+[1m| Emails Found: [0m[32mNo emails found.[0m
+[1m| Documents Found: [0m[32mNo document links found.[0m
+--------------------------------------------------
+[1m3.
+ --- [+] Website: [0m[35mData Breach | Surveillance Self-Defense[0m
+[1m| Information: [0m[32mNo description provided[0m
+[1m| Onion Link: [0m[32mhttp://y7yea4pmmqlotusmldd7gqh7w7fkevn7tai7uaycx3kyt33gd7x434ad.onion[0m
+[1m| Keywords: [0m[32msecurity, privacy, online, use, encryption, guides, know, iphone, surveillance, get, settings, animated, overview, index, protecting, basics, tool, scenarios[0m
+[1m	- Sentiment: Polarity = 0.22, Subjectivity = 0.43
+[1m| Metadata: [0m[32m{"viewport": "width=device-width, initial-scale=1.0", "og:url": "https://ssd.iykpqm7jiradoeezzkhj7c4b33g4hbgfwelht2evxxeicbpjy44c7ead.onion/", "og:title": "Surveillance Self-Defense", "og:type": "website", "og:image": null, "og:image:width": "1200", "og:image:height": "600", "og:description": "We\u2019re the Electronic Frontier Foundation, a member-supported non-profit working to protect online privacy for over thirty-five years. This is Surveillance Self-Defense: our expert guide to protecting you and your friends from online spying.\n\nRead the BASICS to find out how online surveillance works. Dive into our TOOL GUIDES for instructions...", "twitter:card": "summary_large_image", "twitter:site": "@eff", "twitter:creator": "@eff", "sentry-trace": "45851498b50d4170baf3a722d8376c84-c3d63908f6704425-1", "baggage": "sentry-trace_id=45851498b50d4170baf3a722d8376c84,sentry-sample_rate=1.0,sentry-sampled=true,sentry-environment=production,sentry-public_key=5e85922938ef56028dea6cc7ad5924e4", "csrf-param": "authenticity_token", "csrf-token": "vaDyuyXb0u1AAfqn_Pb5JxO7ByBPxZVHvBzDusDFt_6wc8530XiKb28oYyO_pGXZwTPuM9YvG4RAXrfWicb1zA"}[0m
+[1m| Links Found: [0m[32m119[0m
+[1m| Emails Found: [0m[32mNo emails found.[0m
+[1m| Documents Found: [0m[32mNo document links found.[0m
