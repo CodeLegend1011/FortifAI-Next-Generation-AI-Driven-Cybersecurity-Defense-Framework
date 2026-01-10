@@ -35,15 +35,6 @@ import os
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module=".*sip.*")
 
-# Database Configuration
-DB_CONFIG = {
-    'host': 'localhost',
-    'database': 'fortifai_db',
-    'user': 'postgres',
-    'password': 'postgres',
-    'port': 5432
-}
-
 # Server Configuration
 SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 9999

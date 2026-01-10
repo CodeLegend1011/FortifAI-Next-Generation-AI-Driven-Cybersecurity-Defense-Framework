@@ -1,0 +1,501 @@
+Timestamp,Severity,Client,Category,Title,Description,Risk Score
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Process,⚠️ Unusual Process Spawning Detected,Rapid creation of multiple processes detected | AI Analysis: Pattern Recognition: 10.0/10,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Process,Suspicious Process Behavior - HIGH,AI Analysis: Pattern Recognition: 10.0/10,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 91.228.165.160:8883 (TCP:8883),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2a03:2880:f33e:123:face:b00c:0:167:443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1709:dc06:80 (TCP/HTTP),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1261:2403:443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2600:1901:1:d18:::443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 52.123.161.53:443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2404:6800:4003:c05::bc:443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 192.168.56.107:61742 (TCP:61742),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1261:240e:443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1709:dc06:80 (TCP/HTTP),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2603:1063:c::5a:443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 52.123.171.36:443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2603:1063::7a:443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2404:6800:4003:c05::bc:443 (TCP/HTTPS),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2404:6800:4003:c00::bc:5228 (TCP:5228),9.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,ML Anomaly: HIGH - NETWORK,Threat Level: 8.0/10 | ⚠️ Possible Command & Control (C2) communication detected,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10 | Rapid process creation: 283 processes spawned,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10 | Rapid process creation: 258 processes spawned,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:24:19,HIGH,KALPESH-TVD,Network,ML Anomaly: HIGH - NETWORK,Threat Level: 8.0/10 | ⚠️ Possible Command & Control (C2) communication detected,8.00
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-15.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-15.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-14.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-14.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-13.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-13.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-11.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-11.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-10.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-10.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-1.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-1.enc | Extension: .enc | Directory: C:\Users\parth\App,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022.enc | Extension: .enc | Directory: C:\Users\parth\AppDa,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022-kr.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022-kr.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022-jp.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022-jp.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb2312.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb2312.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb2312-raw.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb2312-raw.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb1988.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb1988.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb12345.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb12345.enc | Extension: .enc | Directory: C:\Users\parth\AppDa,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-kr.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-kr.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-jp.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-jp.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-cn.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-cn.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: ebcdic.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: ebcdic.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: dingbats.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: dingbats.enc | Extension: .enc | Directory: C:\Users\parth\AppD,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp950.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp950.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp949.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp949.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp936.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp936.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp932.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp932.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp874.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp874.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp869.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp869.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp866.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp866.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp865.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp865.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp864.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp864.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp863.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp863.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp862.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp862.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp861.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp861.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp860.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp860.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp857.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp857.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp855.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp855.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp852.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp852.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp850.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp850.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp775.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp775.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp737.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp737.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp437.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp437.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1258.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1258.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1257.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1257.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1256.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1256.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1255.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1255.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1254.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1254.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1253.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1253.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1252.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1252.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1251.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1251.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1250.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1250.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: cns11643.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cns11643.enc | Extension: .enc | Directory: C:\Users\parth\AppD,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: big5.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: big5.enc | Extension: .enc | Directory: C:\Users\parth\AppData\,9.50
+2026-01-10 11:24:09,CRITICAL,Parth,Filesystem,Suspicious File Activity: ascii.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: ascii.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: big5.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1252.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1251.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp866.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1258.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp737.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cns11643.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp855.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1257.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp850.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp860.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp437.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp775.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1253.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp857.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp861.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp862.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp865.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1254.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1255.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp852.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: ascii.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp863.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp864.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1256.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1250.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macThai.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macTurkish.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-t.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-ru.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: ksc5601.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macCroatian.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-u.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-r.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: tis-620.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: symbol.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: iso8859-9.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macJapan.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: jis0201.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macCentEuro.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macIceland.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macGreek.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: shiftjis.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macCyrillic.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macRoman.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: jis0208.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macRomania.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macDingbats.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macUkraine.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:24:08,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: jis0212.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:54,CRITICAL,kali,Filesystem,Suspicious File Activity: flag.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: flag.enc | Extension: .enc | Directory: /home/kali/Documents | ,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:53,HIGH,kali,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:23:23,CRITICAL,kali,Filesystem,Suspicious File Activity: flag.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: flag.enc | Extension: .enc | Directory: /home/kali/Documents | ,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:23,HIGH,kali,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-15.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-15.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-14.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-14.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-13.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-13.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-11.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-11.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-10.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-10.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-1.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-1.enc | Extension: .enc | Directory: C:\Users\parth\App,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022.enc | Extension: .enc | Directory: C:\Users\parth\AppDa,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022-kr.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022-kr.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022-jp.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022-jp.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb2312.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb2312.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb2312-raw.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb2312-raw.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb1988.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb1988.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb12345.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb12345.enc | Extension: .enc | Directory: C:\Users\parth\AppDa,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-kr.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-kr.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-jp.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-jp.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-cn.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-cn.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: ebcdic.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: ebcdic.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: dingbats.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: dingbats.enc | Extension: .enc | Directory: C:\Users\parth\AppD,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp950.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp950.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp949.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp949.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp936.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp936.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp932.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp932.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp874.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp874.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp869.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp869.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp866.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp866.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp865.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp865.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp864.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp864.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp863.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp863.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp862.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp862.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp861.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp861.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp860.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp860.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp857.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp857.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp855.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp855.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp852.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp852.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp850.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp850.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp775.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp775.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp737.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp737.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp437.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp437.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1258.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1258.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1257.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1257.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1256.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1256.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1255.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1255.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1254.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1254.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1253.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1253.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1252.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1252.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1251.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1251.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1250.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1250.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: cns11643.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cns11643.enc | Extension: .enc | Directory: C:\Users\parth\AppD,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: big5.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: big5.enc | Extension: .enc | Directory: C:\Users\parth\AppData\,9.50
+2026-01-10 11:23:15,CRITICAL,Parth,Filesystem,Suspicious File Activity: ascii.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: ascii.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp864.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp866.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1252.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp862.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp855.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp861.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp852.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp857.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: ascii.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp865.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp863.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp437.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp737.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1251.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp850.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: big5.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cns11643.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1254.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1255.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1256.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1258.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp860.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp775.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1253.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1250.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1257.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: iso8859-9.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: jis0201.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macRomania.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macThai.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: shiftjis.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: tis-620.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macDingbats.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: symbol.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macCentEuro.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macCroatian.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macCyrillic.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: ksc5601.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-u.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-r.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-t.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-ru.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: jis0212.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macJapan.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: jis0208.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macGreek.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macUkraine.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macIceland.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macTurkish.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:23:13,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macRoman.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,⚠️ Possible C2 Communication Detected,Repeated connections to same destination suggest Command & Control (C2) communication | AI Analysis:,8.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 91.228.165.160:8883 (TCP:8883),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2a03:2880:f33e:123:face:b00c:0:167:443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1709:dc06:80 (TCP/HTTP),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1261:2403:443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2600:1901:1:d18:::443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 52.123.161.53:443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2404:6800:4003:c05::bc:443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 192.168.56.107:61742 (TCP:61742),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1261:240e:443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1709:dc06:80 (TCP/HTTP),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2603:1063:c::5a:443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 52.123.171.36:443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2603:1063::7a:443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2404:6800:4003:c05::bc:443 (TCP/HTTPS),9.00
+2026-01-10 11:22:56,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2404:6800:4003:c00::bc:5228 (TCP:5228),9.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,Network,ML Anomaly: HIGH - NETWORK,Threat Level: 8.0/10 | ⚠️ Possible Command & Control (C2) communication detected,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10 | Rapid process creation: 258 processes spawned,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10 | Rapid process creation: 283 processes spawned,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,Network,ML Anomaly: HIGH - NETWORK,Threat Level: 8.0/10 | ⚠️ Possible Command & Control (C2) communication detected,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:22:53,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:22:27,CRITICAL,kali,Filesystem,Suspicious File Activity: flag.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: flag.enc | Extension: .enc | Directory: /home/kali/Documents | ,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:23,HIGH,kali,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-15.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-15.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-14.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-14.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-13.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-13.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-11.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-11.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-10.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-10.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-1.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-1.enc | Extension: .enc | Directory: C:\Users\parth\App,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022.enc | Extension: .enc | Directory: C:\Users\parth\AppDa,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022-kr.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022-kr.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022-jp.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022-jp.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb2312.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb2312.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb2312-raw.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb2312-raw.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb1988.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb1988.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb12345.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb12345.enc | Extension: .enc | Directory: C:\Users\parth\AppDa,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-kr.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-kr.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-jp.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-jp.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-cn.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-cn.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: ebcdic.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: ebcdic.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: dingbats.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: dingbats.enc | Extension: .enc | Directory: C:\Users\parth\AppD,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp950.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp950.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp949.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp949.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp936.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp936.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp932.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp932.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp874.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp874.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp869.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp869.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp866.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp866.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp865.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp865.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp864.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp864.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp863.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp863.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp862.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp862.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp861.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp861.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp860.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp860.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp857.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp857.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp855.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp855.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp852.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp852.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp850.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp850.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp775.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp775.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp737.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp737.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp437.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp437.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1258.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1258.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1257.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1257.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1256.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1256.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1255.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1255.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1254.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1254.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1253.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1253.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1252.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1252.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1251.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1251.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1250.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1250.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: cns11643.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cns11643.enc | Extension: .enc | Directory: C:\Users\parth\AppD,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: big5.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: big5.enc | Extension: .enc | Directory: C:\Users\parth\AppData\,9.50
+2026-01-10 11:22:23,CRITICAL,Parth,Filesystem,Suspicious File Activity: ascii.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: ascii.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1257.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1258.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: big5.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1255.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp437.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: ascii.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1256.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1254.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1250.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp863.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp862.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp865.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp861.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp866.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp857.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp737.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1253.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1252.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp860.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp864.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp775.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp850.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1251.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp855.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp852.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cns11643.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macTurkish.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macThai.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: tis-620.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: symbol.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: shiftjis.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macUkraine.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-ru.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-r.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-u.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macCroatian.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: koi8-t.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macCentEuro.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: ksc5601.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macCyrillic.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: jis0212.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: jis0208.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: jis0201.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: iso8859-9.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macGreek.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macDingbats.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macRomania.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macJapan.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macRoman.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:22:18,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: macIceland.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:57,CRITICAL,kali,Filesystem,Suspicious File Activity: flag.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: flag.enc | Extension: .enc | Directory: /home/kali/Documents | ,8.50
+2026-01-10 11:21:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:53,MEDIUM,kali,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: flag.enc (.enc) | Risk: 8.5,8.50
+2026-01-10 11:21:53,HIGH,kali,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:21:53,HIGH,kali,Network,ML Anomaly: HIGH - NETWORK,Threat Level: 8.0/10 | ⚠️ Possible Command & Control (C2) communication detected,8.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 91.228.165.160:8883 (TCP:8883),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2a03:2880:f33e:123:face:b00c:0:167:443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1709:dc06:80 (TCP/HTTP),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1261:2403:443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2600:1901:1:d18:::443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 52.123.161.53:443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2404:6800:4003:c05::bc:443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 192.168.56.107:61742 (TCP:61742),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1261:240e:443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 64:ff9b::1709:dc06:80 (TCP/HTTP),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2603:1063:c::5a:443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 52.123.171.36:443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2603:1063::7a:443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2404:6800:4003:c05::bc:443 (TCP/HTTPS),9.00
+2026-01-10 11:21:35,HIGH,KALPESH-TVD,Network,Suspicious Network Connection,High-risk connection to 2404:6800:4003:c00::bc:5228 (TCP:5228),9.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10 | Rapid process creation: 258 processes spawned,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,Network,ML Anomaly: HIGH - NETWORK,Threat Level: 8.0/10 | ⚠️ Possible Command & Control (C2) communication detected,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,System,ML Anomaly: HIGH - SYSTEM,Threat Level: 8.0/10,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,Network,ML Anomaly: HIGH - NETWORK,Threat Level: 8.0/10 | ⚠️ Possible Command & Control (C2) communication detected,8.00
+2026-01-10 11:21:33,HIGH,KALPESH-TVD,Process,ML Anomaly: HIGH - PROCESS,Threat Level: 8.0/10 | Rapid process creation: 283 processes spawned,8.00
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-15.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-15.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-14.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-14.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-13.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-13.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-11.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-11.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-10.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-10.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso8859-1.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso8859-1.enc | Extension: .enc | Directory: C:\Users\parth\App,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022.enc | Extension: .enc | Directory: C:\Users\parth\AppDa,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022-kr.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022-kr.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: iso2022-jp.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: iso2022-jp.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb2312.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb2312.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb2312-raw.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb2312-raw.enc | Extension: .enc | Directory: C:\Users\parth\Ap,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb1988.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb1988.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: gb12345.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: gb12345.enc | Extension: .enc | Directory: C:\Users\parth\AppDa,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-kr.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-kr.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-jp.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-jp.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: euc-cn.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: euc-cn.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: ebcdic.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: ebcdic.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: dingbats.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: dingbats.enc | Extension: .enc | Directory: C:\Users\parth\AppD,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp950.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp950.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp949.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp949.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp936.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp936.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp932.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp932.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp874.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp874.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp869.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp869.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp866.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp866.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp865.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp865.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp864.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp864.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp863.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp863.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp862.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp862.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp861.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp861.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp860.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp860.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp857.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp857.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp855.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp855.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp852.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp852.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp850.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp850.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp775.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp775.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp737.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp737.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp437.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp437.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1258.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1258.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1257.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1257.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1256.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1256.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1255.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1255.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1254.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1254.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1253.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1253.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1252.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1252.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1251.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1251.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cp1250.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cp1250.enc | Extension: .enc | Directory: C:\Users\parth\AppDat,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: cns11643.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: cns11643.enc | Extension: .enc | Directory: C:\Users\parth\AppD,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: big5.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: big5.enc | Extension: .enc | Directory: C:\Users\parth\AppData\,9.50
+2026-01-10 11:21:29,CRITICAL,Parth,Filesystem,Suspicious File Activity: ascii.enc,🚨 [FILESYSTEM] RANSOMWARE SUSPECTED: ascii.enc | Extension: .enc | Directory: C:\Users\parth\AppData,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp862.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp861.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp866.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp860.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp857.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp864.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp863.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp865.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1255.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1250.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: big5.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1251.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1254.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp855.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1258.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cns11643.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1253.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1252.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp437.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp850.enc (.enc) | Risk: 9.5,9.50
+2026-01-10 11:21:28,MEDIUM,Parth,Filesystem,ML Anomaly: MEDIUM - FILESYSTEM,Suspicious file: cp1256.enc (.enc) | Risk: 9.5,9.50

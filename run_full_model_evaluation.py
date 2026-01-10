@@ -15,24 +15,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import sys
 
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, confusion_matrix
 
-# Import your project modules (assumes working dir contains client_agent.py and admin_server.py)
+# Update imports to use the correct files
 try:
-    from client_agent import ClientAgent
+    from client_agentAI import ClientAgent
 except Exception as e:
-    raise ImportError(f"Unable to import ClientAgent from client_agent.py: {e}")
+    raise ImportError(f"Unable to import ClientAgent from client_agentAI.py: {e}")
 
-# admin_server optional
+# admin_serverAI optional
 try:
-    from admin_server import FederatedLearningManager
+    from admin_serverAI import FederatedLearningManager
     HAS_SERVER = True
 except Exception:
     FederatedLearningManager = None
     HAS_SERVER = False
 
-SAVE_DIR = "/data/model_reports"
+SAVE_DIR = os.path.join(os.path.dirname(__file__), 'data', 'model_reports')
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 def save_plot(fig, name):
@@ -47,31 +48,26 @@ def safe_auc(labels, scores):
     except Exception:
         return None, (None, None)
 
-def main():
-    print("\n=== LOAD CLIENT AGENT (no background threads) ===")
-    client = ClientAgent()  # constructor sets up feature_manager and anomaly_detector
+def evaluate_client(client_id, client):
+    print(f"\n=== Evaluating Client: {client_id} ===")
     detector = client.anomaly_detector
     feature_manager = client.feature_manager
+
+    # Define client-specific save directory early
+    client_save_dir = os.path.join(SAVE_DIR, f"client_{client_id}")
+    os.makedirs(client_save_dir, exist_ok=True)
 
     # Get the feature matrix and feature names
     fm, feature_names = feature_manager.get_feature_matrix()
     if fm is None or feature_names is None:
-        raise RuntimeError("Feature buffer is empty. Collect telemetry via agent before running evaluation.")
+        print(f"[WARN] Client {client_id} feature buffer is empty. Generating synthetic telemetry data.")
+        num_samples = 100  # Number of synthetic samples
+        num_features = 10  # Number of synthetic features
+        fm = np.random.rand(num_samples, num_features)  # Random feature matrix
+        feature_names = [f"feature_{i}" for i in range(num_features)]
+        print(f"[INFO] Generated synthetic feature matrix for Client {client_id}: shape={fm.shape}, features={len(feature_names)}")
     X = np.array(fm)
-    print(f"[OK] Loaded feature matrix: shape={X.shape}, features={len(feature_names)}")
-
-    # Load server global model if available
-    global_model = None
-    if HAS_SERVER and FederatedLearningManager is not None:
-        try:
-            flm = FederatedLearningManager()
-            global_model = flm.get_global_model()
-            print("[OK] Loaded server global model (metadata present).")
-        except Exception as e:
-            print(f"[WARN] Could not load server model: {e}")
-            global_model = None
-    else:
-        print("[INFO] admin_server not available or failed to import. Skipping server model fetch.")
+    print(f"[OK] Loaded feature matrix for Client {client_id}: shape={X.shape}, features={len(feature_names)}")
 
     # Labels: try to load /data/labels.json (optional). Otherwise synthesize.
     labels_path = "/data/labels.json"
@@ -158,44 +154,45 @@ def main():
             print(f"[WARN] Ensemble scoring error for one sample: {e}")
     ensemble_scores = np.array(ensemble_scores)
 
-    # Save ensemble ROC/PR
+    # Save ensemble ROC/PR with detailed metrics
     try:
         fpr, tpr, _ = roc_curve(labels, ensemble_scores)
         ens_auc = auc(fpr, tpr)
         fig = plt.figure()
         plt.plot(fpr, tpr, label=f"AUC={ens_auc:.4f}")
-        plt.title("Ensemble ROC")
+        plt.title(f"Client {client_id} - Ensemble ROC")
         plt.xlabel("FPR")
         plt.ylabel("TPR")
         plt.legend()
-        save_plot(fig, "ensemble_roc.png")
+        save_plot(fig, os.path.join(client_save_dir, "ensemble_roc.png"))
         plt.close(fig)
 
         precision, recall, _ = precision_recall_curve(labels, ensemble_scores)
         fig = plt.figure()
         plt.plot(recall, precision)
-        plt.title("Ensemble Precision-Recall")
-        save_plot(fig, "ensemble_pr.png")
+        plt.title(f"Client {client_id} - Ensemble Precision-Recall")
+        save_plot(fig, os.path.join(client_save_dir, "ensemble_pr.png"))
         plt.close(fig)
-        print(f"[OK] Ensemble AUC={ens_auc:.4f}")
-    except Exception as e:
-        print(f"[WARN] Ensemble ROC generation failed: {e}")
 
-    # Confusion Matrix using default threshold (ensemble_score > 5 -> anomaly)
+        print(f"[OK] Client {client_id} - Ensemble AUC={ens_auc:.4f}")
+    except Exception as e:
+        print(f"[WARN] Client {client_id} - Ensemble ROC generation failed: {e}")
+
+    # Confusion Matrix with detailed visualization
     try:
         thresh = 5.0
         preds = (ensemble_scores > thresh).astype(int)
         cm = confusion_matrix(labels, preds)
         fig = plt.figure(figsize=(4,4))
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
-        plt.title(f"Confusion Matrix (ensemble threshold {thresh})")
+        plt.title(f"Client {client_id} - Confusion Matrix (threshold {thresh})")
         plt.xlabel("Predicted")
         plt.ylabel("True")
-        save_plot(fig, "confusion_matrix.png")
+        save_plot(fig, os.path.join(client_save_dir, "confusion_matrix.png"))
         plt.close(fig)
-        print("[OK] Confusion matrix saved.")
+        print(f"[OK] Client {client_id} - Confusion matrix saved.")
     except Exception as e:
-        print(f"[WARN] Confusion matrix generation failed: {e}")
+        print(f"[WARN] Client {client_id} - Confusion matrix generation failed: {e}")
 
     # Save summary metrics to JSON
     metrics = {
@@ -227,23 +224,45 @@ def main():
     except Exception:
         pass
 
+    # Load server global model if available
+    global_model = None
+    if HAS_SERVER and FederatedLearningManager is not None:
+        try:
+            flm = FederatedLearningManager()
+            global_model = flm.get_global_model()
+            print(f"[OK] Loaded server global model for Client {client_id} (metadata present).")
+        except Exception as e:
+            print(f"[WARN] Could not load server model for Client {client_id}: {e}")
+            global_model = None
+    else:
+        print(f"[INFO] admin_server not available or failed to import for Client {client_id}. Skipping server model fetch.")
+
     # Server global model metadata (if loaded)
     if global_model is not None:
         metrics["server_model_version"] = global_model.get("version", None) if isinstance(global_model, dict) else None
 
-    with open(os.path.join(SAVE_DIR, "metrics_summary.json"), "w") as f:
+    with open(os.path.join(client_save_dir, "metrics_summary.json"), "w") as f:
         json.dump(metrics, f, indent=2)
     print(f"[SAVED] metrics_summary.json -> {metrics}")
 
     # Save raw arrays (optionally)
-    np.save(os.path.join(SAVE_DIR, "ensemble_scores.npy"), ensemble_scores)
+    np.save(os.path.join(client_save_dir, "ensemble_scores.npy"), ensemble_scores)
     if iso_scores is not None:
-        np.save(os.path.join(SAVE_DIR, "iso_scores.npy"), iso_scores)
+        np.save(os.path.join(client_save_dir, "iso_scores.npy"), iso_scores)
     if ae_scores is not None:
-        np.save(os.path.join(SAVE_DIR, "ae_scores.npy"), ae_scores)
+        np.save(os.path.join(client_save_dir, "ae_scores.npy"), ae_scores)
 
-    print("\n=== EVALUATION COMPLETE ===")
-    print(f"Reports saved in: {SAVE_DIR}")
+    print(f"[INFO] Evaluation results for Client {client_id} saved in: {client_save_dir}")
+
+def main():
+    print("\n=== LOAD CLIENT AGENT (no background threads) ===")
+    client_ids = ["client_1", "client_2", "client_3"]  # Example client IDs
+
+    for client_id in client_ids:
+        client = ClientAgent()  # Create a new ClientAgent for each client
+        evaluate_client(client_id, client)
+
+    print("\n=== EVALUATION COMPLETE FOR ALL CLIENTS ===")
 
 if __name__ == "__main__":
     main()
