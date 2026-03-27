@@ -30,8 +30,7 @@ import os
 import warnings
 from dotenv import load_dotenv
 load_dotenv()  # Loads .env file automatically
-import google.generativeai as genai
-import os
+from admin.utils.config import GEMINI_MODEL
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module=".*sip.*")
 
@@ -106,7 +105,7 @@ class AIAssistantManager:
     
     def __init__(self):
         try:
-            self.model = genai.GenerativeModel('gemini-2.5-flash')
+            self.model = genai.GenerativeModel(GEMINI_MODEL)
             self.conversation_history = []
             self.system_context = """You are a cybersecurity expert AI assistant integrated into FortifAI, 
             an advanced threat detection system. You help administrators and users understand security alerts, 

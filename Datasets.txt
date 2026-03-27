@@ -1,0 +1,60 @@
+🌐 Network Features (35 features)
+
+CICIDS2017 - PRIMARY
+
+Link: https://www.unb.ca/cic/datasets/ids-2017.html
+2.8M samples, 14 attack types
+8.5 GB download
+
+
+UNSW-NB15 - SECONDARY
+
+Link: https://research.unsw.edu.au/projects/unsw-nb15-dataset
+2.5M samples, 9 attack types
+2.5 GB download
+
+
+
+⚙️ Process Features (28 features)
+
+ADFA-LD - PRIMARY (Linux)
+
+Link: https://research.unsw.edu.au/projects/adfa-ids-datasets
+833K system call traces
+1.2 GB download
+
+
+PLAID - SECONDARY
+
+Link: https://www.cl.cam.ac.uk/research/srg/netos/stardust/plaid/
+Process-level metrics
+856 MB download
+
+
+
+📁 File System Features (32 features)
+
+EMBER - PRIMARY
+
+Link: https://github.com/elastic/ember
+1.1M Windows PE files
+3.5 GB download
+Quick install: pip install ember
+
+
+Ransomware Detection - SECONDARY
+
+Link: https://github.com/Boomni/ransomware-detection-dataset
+File I/O patterns during ransomware
+280 MB download
+
+
+
+👤 User Activity Features (25 features)
+
+CMU CERT Insider Threat - PRIMARY
+
+Link: https://kilthub.cmu.edu/articles/dataset/Insider_Threat_Test_Dataset/12841247
+32.7M user events over 18 months
+5.2 GB download
+Free registration required

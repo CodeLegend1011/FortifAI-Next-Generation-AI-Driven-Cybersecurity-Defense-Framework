@@ -5088,7 +5088,8 @@ class ClientAIAssistant:
                 return
             
             genai.configure(api_key=GEMINI_API_KEY)
-            self.model = genai.GenerativeModel('gemini-2.0-flash')
+            from client.utils.config import GEMINI_MODEL
+            self.model = genai.GenerativeModel(GEMINI_MODEL)
             self.conversation_history = []
             self.system_context = """You are a cybersecurity expert AI assistant helping users understand 
             security anomalies detected on their local system. Provide clear, actionable explanations in plain English.

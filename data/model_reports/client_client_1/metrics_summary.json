@@ -1,9 +1,0 @@
-{
-  "samples": 100,
-  "features": 10,
-  "ensemble_auc": 0.5,
-  "iso_auc": null,
-  "ae_auc": null,
-  "generated_at": "2026-01-10T07:12:03.732498Z",
-  "server_model_version": 0
-}

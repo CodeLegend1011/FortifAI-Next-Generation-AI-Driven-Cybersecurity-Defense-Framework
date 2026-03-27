@@ -15,7 +15,7 @@ def build_client():
     
     # Common options
     common_options = [
-        'client_agentAI.py',
+        'client/client_agentAI.py',
         '--name=FortifAI_Client',
         '--onedir',  # Single executable
         '--windowed',  # No console (remove for debugging)
@@ -47,6 +47,9 @@ def build_client():
         '--collect-data=tensorflow',
         '--collect-data=sklearn',
         '--collect-all=scipy',
+        # Ensure PyInstaller searches the new package paths
+        '--paths=client',
+        '--paths=shared',
         
         # Exclude unnecessary modules
         '--exclude-module=matplotlib',
@@ -70,7 +73,7 @@ def build_client():
     
     print("\n" + "="*60)
     print("✓ Build complete!")
-    print(f"Executable location: dist/FortifAI_Client{'exe' if platform == 'win32' else ''}")
+    print(f"Executable location: dist/FortifAI_Client{'\\FortifAI_Client.exe' if platform == 'win32' else ''}")
     print("="*60)
 
 if __name__ == '__main__':
