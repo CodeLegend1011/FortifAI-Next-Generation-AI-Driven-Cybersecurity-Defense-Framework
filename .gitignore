@@ -28,12 +28,12 @@ dist/
 # -------------------------------
 # ML Model Files
 # -------------------------------
-models/
-model_cache/
-trained_models/
-*.model
-*.weights
-*.onnx
+# models/
+# model_cache/
+# trained_models/
+# *.model
+# *.weights
+# *.onnx
 
 # Autoencoder, Isolation Forest, sklearn
 *.sav
